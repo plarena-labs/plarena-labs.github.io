@@ -40,6 +40,7 @@ game-arena/index.html
 game-arena/src/game_arena.src.html
 index.html
 lib/build.py
+lib/notice.html
 lib/rough.js
 ml-arena/CHANGELOG.md
 ml-arena/README.md

@@ -167,6 +167,56 @@
   <div class="rule"></div>
 </main>
 
+<!--NOTICE:BEGIN-->
+<!-- ============================================================
+     TEMPORARY development notice.
+
+     lib/build.py drops this file into the notice region of every
+     page (the paired BEGIN / END markers just before the footer).
+
+     To remove it from the whole site:
+
+         git rm lib/notice.html && python3 lib/build.py
+
+     The markers stay behind as harmless empty comments, so the
+     notice can be brought back by re-adding this file. Nothing in
+     any arena refers to it: no JavaScript, no browser storage, no
+     network requests.
+
+     Do NOT write the literal marker comments in this file - the
+     build asserts against it, because a marker inside the injected
+     text would terminate the region early on the next build.
+
+     Deliberately single-theme: every Plarena page commits to the
+     light paper look regardless of the OS setting, so this notice
+     must not carry a prefers-color-scheme block. One would turn it
+     into a dark slab pasted onto a light page.
+     ============================================================ -->
+<style>
+.plarena-devnotice{
+  box-sizing:border-box; max-width:720px; margin:36px auto 24px; padding:14px 18px 16px;
+  border:2px dashed #c9a227; border-radius:11px 4px 13px 6px / 6px 13px 4px 11px;
+  background:#fffaeb; color:#4a3f22; text-align:left;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:14px; line-height:1.6;
+}
+.plarena-devnotice p{margin:0}
+.plarena-devnotice .plarena-devnotice-h{
+  margin:0 0 6px; font-size:11.5px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase; color:#8a6d1a;
+}
+.plarena-devnotice strong{color:#3a3116; font-weight:700}
+.plarena-devnotice a{color:#8a5a00; text-decoration:underline; text-underline-offset:2px}
+</style>
+<div class="plarena-devnotice" role="note" aria-label="Development status">
+  <p class="plarena-devnotice-h">Work in progress</p>
+  <p>Plarena is under active development &mdash; rough edges, bugs and placeholder
+     content are all expected. Found something broken, confusing or missing? Have an
+     idea? <strong>Please tell Xian Su</strong> at
+     <a href="mailto:feedback@plarena.app">feedback@plarena.app</a>.
+     Every piece of feedback makes the next version better. Thank you.</p>
+</div>
+<!--NOTICE:END-->
 <footer>
   © 2026 Xian Su · Plarena Labs · <a href="https://github.com/plarena-labs">github.com/plarena-labs</a> ·
   Open source — see LICENSE and BRAND.md · built for better teaching, free for every classroom

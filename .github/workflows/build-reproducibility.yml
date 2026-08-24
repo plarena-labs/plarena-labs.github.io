@@ -24,4 +24,4 @@ jobs:
       - name: Every arena rebuilds byte-identically from its sources
         run: |
           python3 lib/build.py
-          git diff --exit-code -- '*/index.html'
+          git diff --exit-code -- 'index.html' '*/index.html'
