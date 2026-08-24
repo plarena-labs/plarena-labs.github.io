@@ -12,7 +12,3 @@
 
 .DS_Store
 __pycache__/
-
-# Held back until the custom domain's DNS and certificate are
-# live; see the deployment runbook.
-CNAME
