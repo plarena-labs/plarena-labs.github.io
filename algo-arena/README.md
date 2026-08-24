@@ -1,6 +1,6 @@
 # Algo Arena
 
-*Escapes from brute force.* Part of [Plarena](https://plarena-labs.github.io/) — single-file, offline,
+*Escapes from brute force.* Part of [Plarena](https://plarena.app/) — single-file, offline,
 hand-drawn teaching apps. Built for an undergraduate algorithm-techniques course.
 
 One 12×12 campus map, one robot, nine rooms. Every interesting problem can in principle be

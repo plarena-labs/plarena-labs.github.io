@@ -6,20 +6,16 @@ Plarena is a suite of zero-install, single-file browser apps for teaching
 computer-science courses through play: students don't watch an algorithm,
 they run it, break it, race it, and write their own agents against it.
 
-Site: **https://plarena-labs.github.io/**
-
-> The custom domain **plarena.app** is registered but not yet pointed at this site.
-> When DNS goes live, the `CNAME` file is added and every link below swaps host only —
-> the paths stay identical.
+Site: **https://plarena.app/**
 
 ## Arenas
 
 | Arena | Course | Status |
 |---|---|---|
-| [**Search Arena**](https://plarena-labs.github.io/search-arena/) | Algorithms · AI (search) | ✅ stable |
-| [**Algo Arena**](https://plarena-labs.github.io/algo-arena/) | Algorithms (design paradigms) | ✅ v0 |
-| [**Game Arena**](https://plarena-labs.github.io/game-arena/) | AI (adversarial search) | ✅ v0 |
-| [**ML Arena**](https://plarena-labs.github.io/ml-arena/) | AI (ML unit) · Machine Learning | ✅ v0 |
+| [**Search Arena**](https://plarena.app/search-arena/) | Algorithms · AI (search) | ✅ stable |
+| [**Algo Arena**](https://plarena.app/algo-arena/) | Algorithms (design paradigms) | ✅ v0 |
+| [**Game Arena**](https://plarena.app/game-arena/) | AI (adversarial search) | ✅ v0 |
+| [**ML Arena**](https://plarena.app/ml-arena/) | AI (ML unit) · Machine Learning | ✅ v0 |
 | Vision Arena | Computer Vision | planned |
 | Data Arena | Data Mining | planned |
 

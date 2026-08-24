@@ -10,7 +10,7 @@ muddied by "well, that's just an estimate": when the app says a move is optimal,
 it is optimal. Students play against the search, watch it play itself, and write
 their own agent against it.
 
-Live: **https://plarena-labs.github.io/game-arena/**
+Live: **https://plarena.app/game-arena/**
 
 ---
 
