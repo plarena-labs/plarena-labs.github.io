@@ -1,0 +1,2107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ML Arena · Plarena — your clicks are the training set</title>
+<style>
+  :root{
+    --paper:#faf7ef; --ink:#2b2b2b; --muted:#8a8378; --line:#c9c2b4;
+    --accent:#c0392b; --blue:#1a5fb4; --green:#2e7d32; --magenta:#c2185b;
+    --like:#009E73; --dislike:#D55E00; /* Okabe-Ito */
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Comic Sans MS","Segoe Print","Bradley Hand",cursive,sans-serif; font-size:14px; }
+  header{display:flex; align-items:baseline; gap:14px; padding:14px 20px 4px;}
+  h1{font-size:30px; margin:0; transform:rotate(-.8deg);}
+  h1 span.g2{color:var(--accent);}
+  h1 span.lab{font-size:13px; color:var(--muted); font-weight:normal; margin-left:8px;}
+  main{display:flex; gap:16px; padding:10px 20px 6px; align-items:flex-start; flex-wrap:wrap;}
+  .col-left{flex:1 1 420px; min-width:340px; display:flex; flex-direction:column; gap:12px;}
+  .col-right{flex:0 1 700px; min-width:500px; display:flex; flex-direction:column; gap:12px;}
+  .sketch-box{ background:#fffdf6; border:2.5px solid var(--ink); padding:10px 12px;
+    border-radius:12px 205px 12px 185px/205px 12px 185px 12px; box-shadow:3px 4px 0 rgba(43,43,43,.10); }
+  .boxtitle{font-weight:bold; font-size:15px; margin-bottom:6px;}
+  .note{color:var(--muted); font-size:12px;}
+  .row{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:5px 0;}
+  select,input[type=number]{ font-family:inherit; font-size:13px; background:var(--paper);
+    border:2px solid var(--ink); border-radius:8px 105px 8px 95px/105px 8px 95px 8px; padding:2px 6px; }
+  button{ font-family:inherit; font-size:13px; cursor:pointer; background:var(--ink); color:var(--paper);
+    border:2px solid var(--ink); border-radius:10px 155px 10px 125px/155px 10px 125px 10px; padding:4px 12px; }
+  button:hover{background:var(--accent); border-color:var(--accent);}
+  button.ghost{background:transparent; color:var(--ink);}
+  button.ghost:hover{color:var(--accent); border-color:var(--accent); background:transparent;}
+  button:disabled{opacity:.4; cursor:default;}
+  .chips{display:inline-flex; gap:0;}
+  .chips button{border-radius:0; border-right-width:0; background:transparent; color:var(--ink); padding:3px 10px;}
+  .chips button:first-child{border-radius:10px 0 0 10px;}
+  .chips button:last-child{border-radius:0 10px 10px 0; border-right-width:2px;}
+  .chips button.on{background:var(--ink); color:var(--paper);}
+  .chips button.on:hover{background:var(--ink);}
+  /* menu board */
+  #menu{display:grid; grid-template-columns:repeat(auto-fill, minmax(158px, 1fr)); gap:5px; max-height:470px; overflow:auto; padding-right:2px;}
+  .card{ border:1.6px solid var(--line); border-radius:8px; padding:4px 6px; background:#fffef9; font-size:12px; cursor:default; }
+  .card.hot{border-color:var(--magenta); box-shadow:0 0 0 2px rgba(194,24,91,.25);}
+  .card .nm, .recCard .nm{font-weight:bold; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .card .ft, .recCard .ft{color:var(--muted); font-size:11px; font-family:ui-monospace,Menlo,monospace;}
+  .rate{display:flex; gap:3px; margin-top:2px; align-items:center;}
+  .rate button{ padding:0 6px; font-size:13px; line-height:1.5; background:transparent; color:var(--muted);
+    border:1.5px solid var(--line); border-radius:6px; }
+  .rate button.likeOn{color:#fff; background:var(--like); border-color:var(--like);}
+  .rate button.dislikeOn{color:#fff; background:var(--dislike); border-color:var(--dislike);}
+  .rate button:hover{border-color:var(--ink); background:transparent; color:var(--ink);}
+  .rate button.likeOn:hover{background:var(--like); color:#fff;}
+  .rate button.dislikeOn:hover{background:var(--dislike); color:#fff;}
+  .star{cursor:pointer; color:var(--line); font-size:14px;}
+  .star.on{color:#E69F00;}
+  .pred{font-size:10.5px; color:var(--muted); margin-left:auto; font-family:ui-monospace,monospace;}
+  #canvasWrap{position:relative;}
+  #space{display:block; background:#fffef9; border:1.5px dashed var(--line);}
+  #hoverLine{font-size:12px; color:var(--muted); min-height:16px; font-family:ui-monospace,Menlo,monospace;}
+  table.metrics{width:100%; border-collapse:collapse; font-size:13px;}
+  table.metrics td{padding:2px 4px; border-bottom:1.5px dashed var(--line);}
+  table.metrics td:last-child{text-align:right; font-weight:bold; font-family:ui-monospace,Menlo,monospace;}
+  #lossWrap canvas{display:block; background:#fffef9; border:1.5px dashed var(--line);}
+  .rec{display:flex; gap:6px; flex-wrap:wrap;}
+  .recCard{border:2px solid var(--ink); border-radius:8px; padding:4px 8px; font-size:12px; background:#fffef9; min-width:104px;}
+  .recCard .sc{font-family:ui-monospace,monospace; color:var(--muted); font-size:11px;}
+  .recCard.good{border-color:var(--like);} .recCard.bad{border-color:var(--dislike);}
+  #poe{ border:2.5px solid var(--magenta); border-radius:10px; padding:8px 10px; background:#fff; display:none; }
+  #poe b{color:var(--magenta);}
+  #toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--ink); color:var(--paper);
+    padding:8px 16px; border-radius:10px; opacity:0; transition:opacity .25s; pointer-events:none; font-size:13px; max-width:80vw; z-index:5;}
+  footer{padding:8px 20px 16px; color:var(--muted); font-size:12px;}
+  .hidden{display:none !important;}
+  #home{max-width:980px; margin:10px auto; padding:0 20px; display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .track{cursor:pointer; transition:transform .1s;}
+  .track:hover{transform:rotate(.4deg) scale(1.015); border-color:var(--accent);}
+  .track h2{font-size:20px; margin:0 0 6px;}
+  .track p{font-size:13.5px; margin:0 0 8px; line-height:1.45;}
+  .track .tag{font-size:11.5px; color:var(--muted); font-family:ui-monospace,monospace;}
+  .stageHint{color:var(--magenta); font-size:12.5px;}
+  #histBadge{font-size:11.5px; font-family:ui-monospace,monospace; color:var(--muted); white-space:pre-line;}
+  button.mini{font-size:11.5px; padding:1px 8px; border-width:1.5px;
+    border-radius:8px 85px 8px 75px/85px 8px 75px 8px;}
+  table.data{width:100%; border-collapse:collapse; font-size:11.5px; font-family:ui-monospace,Menlo,monospace;}
+  table.data th{position:sticky; top:0; background:#fffdf6; text-align:right; padding:2px 6px;
+    border-bottom:2px solid var(--ink); font-family:"Comic Sans MS","Segoe Print",cursive,sans-serif; font-size:12px;}
+  table.data th.l, table.data td.l{text-align:left;}
+  table.data td{padding:1px 6px; text-align:right; border-bottom:1px dashed var(--line); white-space:nowrap;}
+  table.data tr.hot td{background:rgba(194,24,91,.10);}
+  table.data tr.sel td{background:rgba(26,95,180,.16);}
+  table.data tr{cursor:default;}
+  table.data td.mut{color:var(--muted);}
+  /* agent anatomy blocks: percepts → agent function → actions */
+  .agentBlk{border:2px dashed #b9b19f; border-radius:14px; padding:8px 8px 10px;
+    display:flex; flex-direction:column; gap:12px;}
+  .blkTag{font-weight:bold; font-size:12px; letter-spacing:.6px; color:var(--accent); padding:0 4px;}
+  .blkTag .blkSub{font-weight:normal; color:var(--muted); letter-spacing:0; font-size:11.5px;}
+  #blkAct:has(> #recBox.hidden){display:none;}
+  /* ---- mode selector + grades app ---- */
+  #modeSel{max-width:880px; margin:26px auto; padding:0 20px; display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  #gApp .col-left{flex:1 1 400px;}
+  #gApp .col-right{flex:0 1 700px;}
+  .gcand{font-family:ui-monospace,Menlo,monospace; font-size:12px;}
+  #gStepOut{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; white-space:pre; overflow-x:auto; line-height:1.55;}
+  .gbadge{border:2px solid #B22222; color:#B22222; border-radius:10px; padding:6px 10px; font-size:12.5px; margin-top:6px; display:none;}
+  table.data td.pf1{color:#009E73; font-weight:bold;} table.data td.pf0{color:#D55E00; font-weight:bold;}
+</style>
+</head>
+<body>
+<header>
+  <h1>ML<span class="g2">Arena</span><span class="lab">a PLARENA lab</span></h1>
+  <span class="note">machine learning, playable — your clicks are the training set</span>
+  <span style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+    <button id="btnHome" class="ghost hidden">&#8962; all models</button>
+    <button id="btnShare" class="ghost" title="copy a link that reproduces this exact menu, ratings and fit">Share link</button>
+  </span>
+</header>
+
+<nav id="roomNav" class="hidden" style="display:flex; gap:10px; align-items:center; padding:6px 20px 0; flex-wrap:wrap;">
+  <span class="note">room:</span>
+  <span class="chips" id="roomChips">
+    <button data-v="linear">Linear</button><button data-v="forecast">Forecast</button><button data-v="logistic">Logistic</button><button data-v="mlp">MLP</button><button data-v="compare">Compare &amp; Bet</button>
+  </span>
+  <span class="note">— switch any time; each room keeps its own clean controls</span>
+</nav>
+
+<div id="modeSel" class="hidden">
+  <div class="sketch-box track" data-md="r">
+    <h2>Restaurant mode</h2>
+    <p>The original arena: rate seeded Miami dishes and watch three lenses learn <i>your</i> taste.
+       Personas, scenarios, bets — exactly as always.</p>
+    <div class="tag">your clicks are the training set</div>
+  </div>
+  <div class="sketch-box track" data-md="g">
+    <h2>Student Grades mode <span style="font-size:13px;color:var(--muted);font-weight:normal;">(teaching mode)</span></h2>
+    <p>"Suppose I have a table of statistics for students who took a course like this one.
+       I want to predict what grade or pass/fail I might get if I take it."</p>
+    <div class="tag">the exact numbers from the lecture — and remember: past performance isn't always predictive</div>
+  </div>
+</div>
+
+<div id="gApp" class="hidden">
+  <nav style="display:flex; gap:10px; align-items:center; padding:6px 20px 0; flex-wrap:wrap;">
+    <span class="note">room:</span>
+    <span class="chips" id="gRoomChips">
+      <button data-v="linear">Linear</button><button data-v="logistic">Logistic</button><button data-v="mlp">MLP</button><button data-v="compare">Compare &amp; Bet</button>
+    </span>
+    <button id="gBtnModes" class="ghost mini">&#8962; modes</button>
+    <span class="note">— a synthetic cohort in the same shape as the worked example · the model learns the class · <i>past performance isn't always predictive</i></span>
+  </nav>
+  <div style="display:flex; gap:16px; padding:10px 20px 6px; align-items:flex-start; flex-wrap:wrap;">
+    <div class="col-left">
+      <div class="agentBlk">
+        <div class="blkTag">1 · PERCEPTS<span class="blkSub"> — the class records: one row per student</span></div>
+        <div class="sketch-box">
+          <div class="boxtitle" style="display:flex; align-items:baseline; gap:6px;">
+            <span id="gTblTitle">Class records</span> <span class="note" id="gTblNote" style="flex:1;"></span>
+            <span style="white-space:nowrap; display:inline-flex; gap:4px;">
+              <button id="gBtnReset" class="ghost mini" title="restore the exact worked-example table">Reset to slides data</button>
+              <button id="gBtnCsv" class="ghost mini">CSV &#8595;</button>
+            </span>
+          </div>
+          <div style="max-height:330px; overflow:auto; border:1.5px dashed var(--line);"><table class="data" id="gTbl"></table></div>
+          <div class="note" id="gEditNote" style="margin-top:4px;"></div>
+        </div>
+      </div>
+      <div class="agentBlk">
+        <div class="blkTag">3 · ACTIONS<span class="blkSub"> — predict for Student K</span></div>
+        <div class="sketch-box">
+          <div class="boxtitle">You are Student K <span class="note">— enter your own planned hours</span></div>
+          <div class="row">Hours_studied <input type="number" id="gKx" value="5" min="0" max="10" step="0.5" style="width:70px;">
+            <span id="gKx2Wrap" class="hidden">Hours_slept <input type="number" id="gKx2" value="7" min="0" max="10" step="0.5" style="width:70px;"></span>
+          </div>
+          <div class="row" style="font-size:15px;"><b id="gKOut">—</b></div>
+          <div class="gbadge" id="gBadge"></div>
+          <div class="row" id="gLooRow"><button id="gBtnLoo" class="ghost">Hide Student F — can the model predict F?</button><span class="note" id="gLooOut"></span></div>
+        </div>
+      </div>
+      <div class="sketch-box">
+        <div class="boxtitle">Metrics <span class="note" id="gMetNote">— MSE uses divisor n (the lecture convention) (divisor n)</span></div>
+        <table class="metrics">
+          <tr><td id="gM1l">train MSE</td><td id="gM1">—</td></tr>
+          <tr id="gM4row" class="hidden"><td id="gM4l">train MAE (L1)</td><td id="gM4">—</td></tr>
+          <tr><td id="gM2l">train RMSE</td><td id="gM2">—</td></tr>
+          <tr><td id="gM3l">cohort (held-out)</td><td id="gM3">—</td></tr>
+        </table>
+        <div class="row"><label class="note" style="cursor:pointer;"><input type="checkbox" id="gChkCo"> show the cohort <span title="a synthetic held-out cohort, generated — never real records; the ten worked-example students are always the training set">?</span></label></div>
+      </div>
+    </div>
+    <div class="col-right">
+      <div class="agentBlk">
+        <div class="blkTag">2 · AGENT FUNCTION<span class="blkSub" id="gFnSub"> — f: Hours_studied &#8594; Score</span></div>
+        <div class="sketch-box">
+          <div class="boxtitle">Controls</div>
+          <div class="row" id="gRowCand"><span class="note">Candidate lines:</span><span class="chips" id="gCandChips"></span></div>
+          <div class="row" id="gRowDeg">degree <input type="range" id="gDeg" min="1" max="10" value="1" style="width:90px;"> <b id="gDegVal">1</b>
+            <span id="gSolvWrap">Solver <span class="chips" id="gSolvChips"><button data-v="closed" class="on">Closed form</button><button data-v="gd">Gradient descent</button></span></span>
+          </div>
+          <div class="row" id="gRowHand"><label><input type="checkbox" id="gChkHand"> Hand fit</label>
+            <span id="gHandCtl" class="hidden">b&#8320; <input type="range" id="gHb" min="20" max="110" value="60" step="0.5" style="width:80px;">
+              b&#8321; <input type="range" id="gHw" min="-15" max="15" value="0" step="0.05" style="width:80px;">
+              <span class="note gcand" id="gHandLine"></span></span>
+          </div>
+          <div class="row" id="gRowLog">
+            <span class="chips" id="gLogChips"><button data-v="trained" class="on">Trained fit</button><button data-v="demo">z = x &#8722; 5 demo</button></span>
+            <span class="note" id="gLogNote"></span>
+          </div>
+          <div class="row hidden" id="gRowThr">threshold T <input type="range" id="gThr" min="0.05" max="0.95" value="0.5" step="0.05" style="width:110px;"> <b id="gThrVal">0.50</b>
+            <span class="note">cohort: <b id="gFP">—</b> false alarms (FP) &#183; <b id="gFN">—</b> missed passes (FN)</span>
+          </div>
+          <div class="note hidden" id="gThrNote">when missing a true Pass costs more than a false alarm, lower T &#8212; and vice versa (default T = 0.5).</div>
+          <div class="row" id="gRowMlp">
+            <span class="note">Data:</span><span class="chips" id="gDsChips"><button data-v="d3" class="on">Two features</button><button data-v="d2">Burnout (1 feature)</button></span>
+            <span class="note">Model:</span><span class="chips" id="gNetChips"><button data-v="preset" class="on">Worked 2-2-1 preset</button><button data-v="trained">Trained</button></span>
+            <span id="gHidWrap" class="hidden">hidden <input type="range" id="gHid" min="0" max="8" value="4" style="width:70px;"> <b id="gHidVal">4</b>
+              <button id="gBtnReseed" class="ghost mini" title="re-train from a fresh random start">restart</button></span>
+          </div>
+          <div class="row" id="gRowBridge hidden"><button id="gBtnBridge" class="ghost hidden">Add the Hours_slept axis &#8594; the "burnout" students were the ones not sleeping</button></div>
+          <div class="row" id="gRowBet">
+            <span class="note">Scenario: <b>Burnout upset</b> — place your bet, then run on next semester's cohort:</span>
+            <button class="ghost gBet" data-v="logistic">Logistic</button><button class="ghost gBet" data-v="mlp">MLP</button>
+          </div>
+          <div class="row" id="gRowWatch"><button id="gBtnWatch" class="ghost">Watch training</button></div>
+          <div class="note" id="gHint" style="color:var(--magenta);"></div>
+        </div>
+        <div class="sketch-box">
+          <div class="boxtitle"><span id="gCvTitle">Scores vs Hours_studied</span> <span class="note" id="gCvNote"></span></div>
+          <div><canvas id="gCv" width="520" height="470"></canvas></div>
+          <div id="gHover" class="note" style="font-family:ui-monospace,monospace; min-height:16px;">hover the plot · drag a point vertically to experiment (linear) · click a point to flip its label (logistic)</div>
+        </div>
+        <div class="sketch-box hidden" id="gLandBox">
+          <div class="boxtitle">Loss landscape J(w, b) <span class="note" id="gLandNote">&#8212; every line is one point here; least squares is the bottom of the bowl. Convex: a single global minimum, no local traps.</span></div>
+          <div class="row"><span class="chips" id="gLandChips"><button data-v="explore" class="on">Explore</button><button data-v="fog">Hiker in the fog</button><button data-v="gd">GD stepper</button></span></div>
+          <div class="row hidden" id="gWarmCard" style="border:1.5px dashed var(--line); padding:6px 10px; display:block;">
+            <b>Warm-up.</b> You stand on a foggy slope. Probe a step in one direction: <b>3</b> units of progress.
+            Probe the other: <b>4</b>. The obvious question is which path to choose &#8212; but here is the better question:
+            <b>can you build a direction better than both?</b> Yes &#8212; mix them 4&#8202;:&#8202;3. That mixture is the gradient.
+            Try it below. <button id="gWarmOk" class="ghost mini">got it &#8594;</button>
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+            <div>
+              <canvas id="gLand" width="340" height="300"></canvas>
+              <div class="note" id="gLandHint" style="max-width:340px;"></div>
+            </div>
+            <div style="flex:1 1 220px; min-width:220px;">
+              <div id="gLandOut" style="font-family:ui-monospace,monospace; font-size:12px; white-space:pre; line-height:1.55;"></div>
+              <div class="row hidden" id="gGdRow">
+                <button id="gGdStep" class="ghost mini">Step</button>
+                <button id="gGdPlay" class="ghost mini">Play</button>
+                <button id="gGdReset" class="ghost mini">Reset</button>
+                <span class="note">step <b id="gGdIter">0</b></span>
+              </div>
+              <div class="row hidden" id="gEtaRow"><span class="note">&#951;:</span>
+                <span class="chips" id="gEtaChips"><button data-v="0.0005">0.0005 too small</button><button data-v="0.02" class="on">0.02 sensible</button><button data-v="0.05">0.05 too large</button></span>
+              </div>
+              <div class="hidden" id="gGdLossWrap"><canvas id="gGdLoss" width="250" height="90"></canvas><div class="note">loss J vs step</div></div>
+              <div class="row hidden" id="gFogRow"><button id="gFogReset" class="ghost mini">Restart hiker</button></div>
+              <div id="gFogOut" style="font-family:ui-monospace,monospace; font-size:12px; white-space:pre; line-height:1.55;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sketch-box hidden" id="gStepBox">
+          <div class="boxtitle">Step-through <span class="note">— forward &amp; backward, one student at a time (closed-book exam practice)</span></div>
+          <div class="row"><span class="chips" id="gStuChips"></span></div>
+          <div id="gStepOut"></div>
+        </div>
+        <div class="sketch-box hidden" id="gLossBox">
+          <div class="boxtitle">Loss <span class="note">— train (solid) vs cohort (dashed)</span> <span class="note" id="gEpochWrap" style="display:none;">&#183; epoch <b id="gEpochN">—</b></span></div>
+          <div><canvas id="gLoss" width="640" height="150"></canvas></div>
+        </div>
+        <div class="sketch-box hidden" id="gUBox">
+          <div class="boxtitle">Model selection <span class="note">&#8212; train vs cohort MSE across degrees 1&#8211;10 (log scale)</span></div>
+          <div><canvas id="gUcv" width="640" height="150"></canvas></div>
+        </div>
+        <div class="sketch-box hidden" id="gCeBox">
+          <div class="boxtitle">Per-student cross-entropy <span class="note">&#8212; confident-and-wrong is expensive; the threshold slider does not change these bars</span></div>
+          <div><canvas id="gCecv" width="640" height="120"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="home">
+  <div class="sketch-box track" data-tr="linear">
+    <h2>Linear / Polynomial Regression</h2>
+    <p>Fit a curve through data points, then <b>query it</b> — including the future.
+       Stars, residuals, readable weights, the Forecast scene, and the degree dial.</p>
+    <div class="tag">continuous outputs · closed form · Fit view · Hand fit</div>
+  </div>
+  <div class="sketch-box track" data-tr="forecast">
+    <h2>Forecast <span style="font-size:13px;color:var(--muted);font-weight:normal;">(regression in time)</span></h2>
+    <p>Your food truck's daily sales: fit a curve to 24 past days, then <b>read next week off it</b>.
+       The degree dial decides whether the forecast is honest — or a hallucination.</p>
+    <div class="tag">continuous target · time axis · the future = extrapolation · Reveal</div>
+  </div>
+  <div class="sketch-box track" data-tr="logistic">
+    <h2>Logistic Regression</h2>
+    <p>From scores to probabilities: one S-curve, a straight boundary, calibrated
+       confidence. Watch gradient descent raise the boundary from nothing.</p>
+    <div class="tag">like/dislike · sigmoid view · watch training · Hand fit</div>
+  </div>
+  <div class="sketch-box track" data-tr="mlp">
+    <h2>MLP (Neural Network)</h2>
+    <p>A committee of straight lines that votes itself into a curve. Slide hidden
+       units from 0 (it <i>is</i> logistic) to 16 and watch capacity grow.</p>
+    <div class="tag">hidden-units dial · anatomy overlay · watch training</div>
+  </div>
+  <div class="sketch-box track" data-tr="compare">
+    <h2>Compare &amp; Bet</h2>
+    <p>All three lenses on one canvas, one dataset. Place your bet, run the pinned
+       scenarios — XOR upset, the overfitting Scissors — and watch the champion rotate.</p>
+    <div class="tag">POE bets · scenarios · A/B slots · champion rotation</div>
+  </div>
+</div>
+
+<main>
+  <div class="col-left">
+    <div class="agentBlk" id="blkPercept">
+      <div class="blkTag">1 · PERCEPTS<span class="blkSub" id="perSub"> — sensors: dish features + the diner's ratings, collected by the house</span></div>
+    <div class="sketch-box">
+      <div class="boxtitle" style="display:flex; align-items:baseline; gap:6px;">
+        <span id="menuTitle">Menu</span> <span class="note" id="menuNote" style="flex:1; min-width:0;">— taste something, rate it. The model learns <i>you</i>.</span>
+        <span style="white-space:nowrap; display:inline-flex; gap:4px;">
+          <button id="btnTable" class="ghost mini" title="the same data as a table: rows = data points, columns = features">Table</button>
+          <button id="btnCsv" class="ghost mini" title="download this dataset (features + your ratings) as CSV">CSV &#8595;</button>
+          <button id="btnClear" class="ghost mini" title="clear all your ratings">Clear</button>
+        </span>
+      </div>
+      <div id="menu"></div>
+      <div id="dataWrap" class="hidden">
+        <div class="note" id="dataNote" style="margin:2px 0 4px;"></div>
+        <div style="max-height:470px; overflow:auto; border:1.5px dashed var(--line);"><table class="data" id="dataTbl"></table></div>
+      </div>
+    </div>
+    </div>
+
+    <div class="agentBlk" id="blkAct">
+      <div class="blkTag">3 · ACTIONS<span class="blkSub"> — actuator: recommendations, served back to the diner</span></div>
+    <div class="sketch-box" id="recBox">
+      <div class="boxtitle">Recommendations <span class="note">— the 5 unrated dishes where f predicts the HIGHEST score (ranked by &#375;, not by error) · blue rank rings mark them on the map</span></div>
+      <div class="rec" id="recRow"></div>
+      <div class="row"><button id="btnReveal" class="ghost hidden">Reveal — did it get them right?</button><span id="recVerdict" class="note"></span></div>
+      <div class="row">
+        <label class="note" style="cursor:pointer;"><input type="checkbox" id="chkBubble"> show the filter bubble <span title="hatched = where f predicts below the current top-5 cutoff: the recommender never surfaces dishes there — and can never learn it was wrong there">?</span></label>
+        <button id="btnSim" class="ghost mini">Simulate 3 feedback rounds</button>
+        <button id="btnSimClear" class="ghost mini hidden">Clear sim</button>
+      </div>
+      <div class="note" id="simNote" style="display:none;"></div>
+    </div>
+    </div>
+
+    <div class="sketch-box" id="envBox">
+      <div class="boxtitle">Environment <span class="note">— what kind of world is this? (live)</span></div>
+      <table class="metrics">
+        <tr><td>observable</td><td id="envObs">Partially</td></tr>
+        <tr><td>deterministic</td><td id="envDet">—</td></tr>
+        <tr><td>agents</td><td>Single</td></tr>
+        <tr><td>episodic / sequential</td><td>Episodic</td></tr>
+        <tr><td>static / dynamic</td><td>Static</td></tr>
+        <tr><td>discrete / continuous</td><td id="envDisc">—</td></tr>
+      </table>
+      <div class="note" style="margin-top:6px;">Each dish is judged on its own — no action compounds into the next state. (Search &amp; Game Arena are the <i>sequential</i> counterexamples.) Flip the persona or scenario and watch the <i>deterministic</i> row change. Learning-agent anatomy: <b>performance element</b> = the fitted f ranking dishes · <b>learning element</b> = the fit routine · <b>critic</b> = the Metrics panel · <b>problem generator</b> = <b>you</b> (invented dishes, the degree dial, the scenarios). The house runs the agent; the diner's taste is what f estimates.</div>
+    </div>
+  </div>
+
+  <div class="col-right">
+    <div class="agentBlk" id="blkFunc">
+      <div class="blkTag">2 · AGENT FUNCTION<span class="blkSub" id="funcSub"> — f: (spiciness, price) → rating. The learnable middle — most of the agent lives here</span></div>
+    <div class="sketch-box" id="ctrlBox">
+      <div class="boxtitle">Controls</div>
+      <div class="row">
+        Data
+        <span class="chips" id="srcChips">
+          <button data-v="self" class="on">My ratings</button><button data-v="persona">Persona</button>
+        </span>
+        <select id="personaSel" class="hidden">
+          <option value="regular">The Regular (graded taste)</option>
+          <option value="purist">The Purist</option>
+          <option value="contrarian">The Contrarian</option>
+        </select>
+      </div>
+      <div class="row">
+        <span id="tgtLabel">Target</span>
+        <span class="chips" id="tgtChips">
+          <button data-v="binary" class="on">Like / Dislike</button><button data-v="stars">Stars 1–5</button>
+        </span>
+        <span class="note">seed</span><input type="number" id="seedIn" value="12" min="1" max="9999" style="width:60px;">
+        <button id="btnWorld" class="ghost">New menu</button>
+      </div>
+      <div class="row" id="lensRow">
+        <span id="lensPick">Lens
+        <span class="chips" id="lensChips">
+          <button data-v="linear" class="on">Linear</button><button data-v="logistic">Logistic</button><button data-v="mlp">MLP</button>
+        </span></span>
+        <span id="hidWrap" class="hidden">hidden <input type="range" id="hidIn" min="0" max="16" value="4" style="width:80px;"> <b id="hidVal">4</b></span>
+        <span id="degWrap">degree <input type="range" id="degIn" min="1" max="10" value="1" style="width:90px;"> <b id="degVal">1</b>
+          <span class="note" title="polynomial features: x1^i·x2^j up to this total degree — still LINEAR in the weights. Crank it high and the curve wiggles through every point: that is overfitting, live.">?</span></span>
+      </div>
+      <div class="row hidden" id="ffeatRow">Features
+        <span class="chips" id="ffChips"><button data-v="day" class="on">day only</button><button data-v="dayrain">+ rain &#9748;</button><button data-v="full">+ rain + temp &#127777;</button></span>
+        <span class="note">— can the input even SEE what moves the sales?</span>
+      </div>
+      <div class="row hidden" id="solverRow">Solver
+        <span class="chips" id="solChips"><button data-v="closed" class="on">Closed form</button><button data-v="gd">Gradient descent</button></span>
+        <span class="note" id="solNote">— two roads to the same minimum</span>
+      </div>
+      <div class="row" id="handRow">
+        <label><input type="checkbox" id="chkHand"> Hand fit <span class="note">— be the optimizer</span></label>
+        <span id="handCtl" class="hidden">
+          b <input type="range" id="hw0" min="-4" max="4" value="0" step="0.05" style="width:64px;">
+          w&#8321; <input type="range" id="hw1" min="-4" max="4" value="0" step="0.05" style="width:64px;">
+          w&#8322; <input type="range" id="hw2" min="-4" max="4" value="0" step="0.05" style="width:64px;">
+          <button id="btnSnap" class="ghost">Snap to fit</button>
+        </span>
+      </div>
+      <div class="row hidden" id="handScore"><span class="note" id="handMsg"></span></div>
+      <div class="row" id="scRow">
+        <span class="note">Scenarios:</span>
+        <button id="sc1" class="ghost">Linear's home</button>
+        <button id="sc2a" class="ghost">Warm-up win</button>
+        <button id="sc2b" class="ghost">XOR upset</button>
+        <button id="sc3" class="ghost">Scissors</button>
+        <button id="sc4" class="ghost">Forecast</button>
+      </div>
+      <div id="poe">
+        <b>Place your bet:</b> which lens will score best on the <i>unrated</i> items?
+        <div class="row">
+          <button class="ghost poeOpt" data-v="linear">Linear</button>
+          <button class="ghost poeOpt" data-v="logistic">Logistic</button>
+          <button class="ghost poeOpt" data-v="mlp">MLP</button>
+        </div>
+      </div>
+      <div class="row" id="miscRow">
+        <button id="btnWatch" class="ghost">Watch training</button>
+      </div>
+    </div>
+    <div class="sketch-box">
+      <div class="boxtitle"><span id="spaceTitle">Taste space</span> <span class="note" id="spaceNote">— x: spiciness · y: price · grey axis bars: dish counts per bin (the data's distribution — hover them) · <span id="lensNote">fit updates as you rate</span></span></div>
+      <div id="canvasWrap"><canvas id="space" width="520" height="520"></canvas></div>
+      <div id="hoverLine">hover the space or the menu to inspect an item</div>
+      <div class="row hidden" id="fRow">
+        <span class="chips" id="fvChips"><button data-v="time" class="on">timeline</button><button data-v="surf">3-D surface</button></span>
+        <button id="btnFuture" class="ghost">Reveal next week — how did the forecast do?</button>
+        <span class="note" id="fNote"></span>
+      </div>
+      <div class="stageHint" id="stageHint"></div>
+    </div>
+    <div class="sketch-box hidden" id="inspBox">
+      <div class="boxtitle">Inspect <span class="note" id="inspNote">— what this lens is really doing</span></div>
+      <div class="row" id="ivRow">
+        <span class="chips" id="ivChips"><button data-v="flat" class="on">2-D view</button><button data-v="surf">3-D surface</button></span>
+        <span class="note hidden" id="ivNote">— drag the surface to spin it</span>
+      </div>
+      <div class="row hidden" id="axRow">slice along
+        <span class="chips" id="axChips"><button data-v="0" class="on">&#127798; spiciness</button><button data-v="1">$ price</button></span>
+        <span class="note">— the curve is a 1-D SLICE (other feature held at its average) · each ○ uses that dish's OWN other value, so ○ can sit off the slice</span>
+      </div>
+      <div id="inspText" class="note" style="margin:2px 0 6px; color:var(--ink); font-size:13px;"></div>
+      <canvas id="insp" width="640" height="216"></canvas>
+    </div>
+    <div class="sketch-box" id="metricsBox">
+      <div class="boxtitle">Metrics <span class="note" id="mNote">— counts, not percentages</span></div>
+      <table class="metrics">
+        <tr><td id="rowBaseL">baseline (majority)</td><td id="mBase">—</td></tr>
+        <tr><td id="rowTrainL">train</td><td id="mTrain">—</td></tr>
+        <tr><td id="rowPoolL">held-out pool</td><td id="mPool">—</td></tr>
+      </table>
+      <div class="row" style="margin-top:6px;">
+        <button id="btnSaveA" class="ghost">Save → A</button>
+        <button id="btnSaveB" class="ghost">Save → B</button>
+      </div>
+      <div id="histBadge"></div>
+    </div>
+    <div class="sketch-box" id="lossBox">
+      <div class="boxtitle">Loss <span class="note">— train (solid) vs held-out (dashed): watch the scissors</span></div>
+      <div id="lossWrap"><canvas id="loss" width="640" height="170"></canvas></div>
+    </div>
+    </div>
+  </div>
+</main>
+
+<footer>ML Arena · a Plarena lab · ludendo discimus — rendered programmatically, zero art assets. Companions: Search Arena · Game Arena.</footer>
+<div id="toast"></div>
+
+<!--ROUGHJS-->
+<!--MLCORE-->
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const C = window.__mlarena;
+
+/* ---------------- app state ---------------- */
+const S = {
+  seed: 12, source: 'self', persona: 'purist', target: 'binary',
+  lens: 'linear', hidden: 4, degree: 1, solver: 'closed', ffeat: 'day',
+  hand: false, hw: [0, 0, 0], axis: 0, fitProbe: null, probe: null, track: null,
+  iview: 'flat', yaw: -0.72, fview: 'time', fyaw: -0.72, fsel: null, fhover: null,
+  bubble: false, sim: null,
+  self: {},                       // id -> rating (self mode)
+  scenario: null,                 // active scenario id
+  scN: 16, scFlips: 0,
+  stage: 0,                       // progressive disclosure
+  bet: null, pendingScenario: null,
+  slots: { A: null, B: null },
+  items: [], run: null,
+};
+const SCEN = {
+  sc1:  { label:"Linear's home", persona:'regular',    n:16, flips:0, target:'stars',  lens:'linear',   hidden:4  },
+  sc2a: { label:'Warm-up win',   persona:'purist',     n:16, flips:0, target:'binary', lens:'logistic', hidden:4  },
+  sc2b: { label:'XOR upset',     persona:'contrarian', n:16, flips:0, target:'binary', lens:'logistic', hidden:4  },
+  sc3:  { label:'Scissors',      persona:'purist',     n:10, flips:1, target:'binary', lens:'mlp',      hidden:16 },
+};
+const HP = {          // pinned hyperparameters (verified vs Python twin)
+  logistic: { lr:0.5, epochs:400 },
+  mlp:      { lr:0.8, epochs:1500 },
+  mlp16:    { lr:0.8, epochs:2000 },
+};
+
+function ratingsNow(){
+  if (S.source === 'self') return { ratings: S.self, mode: S.target };
+  return C.personaRatings(S.persona, S.items, S.seed, S.scN, S.scFlips);
+}
+function cfgNow(){
+  const hp = S.lens === 'mlp' ? (S.hidden >= 12 ? HP.mlp16 : HP.mlp) : HP.logistic;
+  return { seed: S.seed, persona: S.source === 'self' ? 'self' : S.persona,
+           n: S.scN, flips: S.scFlips, lens: S.lens, hidden: S.hidden, degree: S.degree, solver: S.solver,
+           lr: hp.lr, epochs: hp.epochs, selfRatings: S.self, targetMode: S.target };
+}
+function cfgHash(){
+  const c = cfgNow();
+  const r = S.source === 'self' ? rateString() : `${S.persona}:${S.scN}:${S.scFlips}`;
+  return `${c.seed}|${S.target}|${r}`;
+}
+function ratedCount(){ return Object.keys(ratingsNow().ratings).length; }
+
+/* ---------------- train + refresh ---------------- */
+function retrain(){
+  if (S.sim) clearSim();
+  if (S.forecast){ S.frun = forecastFit(); refreshForecastUI(); return; }
+  const rr = ratingsNow();
+  const n = Object.keys(rr.ratings).length;
+  if (n < 3){ S.run = null; refreshAll(); return; }
+  if (rr.mode === 'stars' && S.lens !== 'linear'){ S.lens = 'linear'; setChip('lensChips','linear'); }
+  S.run = C.runConfig(cfgNow());
+  refreshAll(); handEval();
+}
+
+/* ---------------- canvas: taste space ---------------- */
+const cv = $('space'), cx = cv.getContext('2d');
+const DPR = Math.min(2, window.devicePixelRatio || 1);   // crisp on retina, identical logical coords
+const CW = 520, CH = 520;
+cv.width = CW*DPR; cv.height = CH*DPR; cv.style.width = CW + 'px'; cv.style.height = CH + 'px';
+cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+const PAD = 46, W = CW - PAD - 14, H = CH - PAD - 14;
+const px = x => PAD + x*W, py = y => (CH - PAD) - y*H;
+let heat = document.createElement('canvas'); heat.width = 60; heat.height = 60;
+let coldOpenId = null;
+let histBins = null;   // [hb1, hb2] — the 10-bin per-feature histograms drawn on the axes
+
+function starColor(v){ const t = (v-1)/4; return `rgb(${Math.round(213-90*t)},${Math.round(94+64*t)},${Math.round(0+40*t)})`; }
+function drawHeart(x, y, s, fill){
+  cx.save(); cx.translate(x, y); cx.scale(s/12, s/12);
+  cx.beginPath(); cx.moveTo(0, 3.5);
+  cx.bezierCurveTo(-6, -2.5, -3.5, -7, 0, -3.6); cx.bezierCurveTo(3.5, -7, 6, -2.5, 0, 3.5);
+  cx.closePath(); cx.fillStyle = fill; cx.fill(); cx.restore();
+}
+function drawCross(x, y, s, col){
+  cx.save(); cx.strokeStyle = col; cx.lineWidth = 2.4; cx.lineCap = 'round';
+  cx.beginPath(); cx.moveTo(x-s, y-s); cx.lineTo(x+s, y+s);
+  cx.moveTo(x+s, y-s); cx.lineTo(x-s, y+s); cx.stroke(); cx.restore();
+}
+function modelProbAt(x1, x2){
+  if (!S.run) return null;
+  if (S.hand && S.degree === 1 && S.lens !== 'mlp'){
+    const z = S.run._st.z([x1, x2]);
+    const s = S.hw[0] + S.hw[1]*z[0] + S.hw[2]*z[1];
+    return S.lens === 'logistic' ? C.sigm(s) : s;
+  }
+  return S.run._model.prob(S.run._st.z([x1, x2]));
+}
+function drawSpace(){
+  if (S.forecast){
+    cv.style.cursor = S.fview === 'surf' ? 'grab' : '';
+    if (S.fview === 'surf') drawForecastSurface(); else drawForecast();
+    return;
+  }
+  cv.style.cursor = '';
+  cx.clearRect(0,0,CW,CH);
+  const simOn = !!(S.sim && S.sim.run);
+  const rr = simOn ? { ratings: S.sim.ratings, mode: S.sim.mode } : ratingsNow();
+  const probAt = simOn ? ((x1, x2) => S.sim.run._model.prob(S.sim.run._st.z([x1, x2]))) : modelProbAt;
+  // heat/prob shading (lens-exclusive overlays)
+  if (S.run || simOn){
+    const hcx = heat.getContext('2d'), img = hcx.createImageData(60,60);
+    for (let iy = 0; iy < 60; iy++) for (let ix = 0; ix < 60; ix++){
+      const v = probAt((ix+0.5)/60, 1-(iy+0.5)/60);
+      const o = (iy*60+ix)*4;
+      if (rr.mode === 'stars'){
+        const t = Math.min(1, Math.max(0, (v-1)/4));
+        img.data[o]=230-120*t; img.data[o+1]=120+80*t; img.data[o+2]=60+20*t; img.data[o+3]=44;
+      } else {
+        if (v >= 0.5){ img.data[o]=0; img.data[o+1]=158; img.data[o+2]=115; img.data[o+3]=Math.min(70, (v-0.5)*2*70); }
+        else { img.data[o]=213; img.data[o+1]=94; img.data[o+2]=0; img.data[o+3]=Math.min(70, (0.5-v)*2*70); }
+      }
+    }
+    hcx.putImageData(img,0,0);
+    cx.imageSmoothingEnabled = true;
+    cx.drawImage(heat, PAD, CH-PAD-H, W, H);
+    // decision boundary p=0.5 (binary): marching segments
+    if (rr.mode === 'binary'){
+      cx.strokeStyle = '#2b2b2b'; cx.lineWidth = 2;
+      const G = 60, val = [];
+      for (let iy = 0; iy <= G; iy++){ val.push([]); for (let ix = 0; ix <= G; ix++) val[iy].push(probAt(ix/G, 1-iy/G) - 0.5); }
+      cx.beginPath();
+      for (let iy = 0; iy < G; iy++) for (let ix = 0; ix < G; ix++){
+        const a = val[iy][ix], b = val[iy][ix+1], c = val[iy+1][ix];
+        const X0 = PAD + ix/G*W, Y0 = CH-PAD-H + iy/G*H, dx = W/G, dy = H/G;
+        if (a*b < 0){ const t = a/(a-b); cx.moveTo(X0+t*dx, Y0); cx.lineTo(X0+t*dx, Y0+dy*0.001+2); }
+        if (a*c < 0){ const t = a/(a-c); cx.moveTo(X0, Y0+t*dy); cx.lineTo(X0+2, Y0+t*dy); }
+      }
+      cx.stroke();
+    }
+  }
+  // MLP anatomy: each hidden unit is a straight line; the curve is their weighted vote
+  if (S.run && S.lens === 'mlp' && S.run.w && S.run.w.W1){
+    const st = S.run._st, W1 = S.run.w.W1, B1 = S.run.w.B1, W2 = S.run.w.W2;
+    let wmax = 1e-9; for (const v of W2) wmax = Math.max(wmax, Math.abs(v));
+    for (let j = 0; j < W1.length; j++){
+      const a = W1[j][0]/st.s1, b2 = W1[j][1]/st.s2;
+      const c = B1[j] - W1[j][0]*st.m1/st.s1 - W1[j][1]*st.m2/st.s2;
+      const pts = [];
+      for (const x of [0, 1]){ const y = -(a*x + c)/(b2 || 1e-12); if (y >= 0 && y <= 1) pts.push([x, y]); }
+      for (const y of [0, 1]){ const x = -(b2*y + c)/(a || 1e-12); if (x > 0 && x < 1) pts.push([x, y]); }
+      if (pts.length >= 2){
+        cx.strokeStyle = `rgba(26,95,180,${0.12 + 0.3*Math.abs(W2[j])/wmax})`;
+        cx.lineWidth = 1.4; cx.setLineDash([6,4]);
+        cx.beginPath(); cx.moveTo(px(pts[0][0]), py(pts[0][1])); cx.lineTo(px(pts[1][0]), py(pts[1][1])); cx.stroke();
+        cx.setLineDash([]);
+      }
+    }
+  }
+  // filter bubble: hatch the region f will NEVER surface (below the top-5 cutoff)
+  if ((S.bubble || simOn) && (S.run || simOn)){
+    const cut = bubbleCutoff(rr, probAt);
+    if (cut !== null){
+      cx.save(); cx.strokeStyle = 'rgba(43,43,43,.30)'; cx.lineWidth = 1;
+      const G = 30;
+      let out = 0;
+      for (let iy = 0; iy < G; iy++) for (let ix = 0; ix < G; ix++){
+        if (probAt((ix+0.5)/G, 1-(iy+0.5)/G) < cut){
+          out++;
+          const X0 = PAD + ix*W/G, Y0 = CH-PAD-H + iy*H/G;
+          cx.beginPath(); cx.moveTo(X0, Y0 + H/G); cx.lineTo(X0 + W/G, Y0); cx.stroke();
+        }
+      }
+      cx.restore();
+      S._bubbleFrac = out/(G*G);
+      cx.fillStyle = '#8a8378'; cx.font = '11px sans-serif'; cx.textAlign = 'left';
+      cx.fillText('hatched = outside the bubble (' + Math.round(100*out/(G*G)) + '% of the space): f never recommends here — and never learns it was wrong here', PAD + 6, CH - PAD - 8);
+      cx.textAlign = 'center';
+    }
+  }
+  // sim round badges: dishes auto-rated by the feedback loop
+  if (simOn){
+    S.sim.added.forEach((ids, r) => {
+      for (const id of ids){
+        const it = S.items[id];
+        cx.fillStyle = '#1a5fb4'; cx.font = 'bold 10px sans-serif';
+        cx.fillRect(px(it.x1) + 8, py(it.x2) - 16, 12, 12);
+        cx.fillStyle = '#fff'; cx.fillText(String(r + 1), px(it.x1) + 14, py(it.x2) - 7);
+      }
+    });
+  }
+  // axes
+  cx.strokeStyle = '#2b2b2b'; cx.lineWidth = 2;
+  cx.beginPath(); cx.moveTo(PAD, CH-PAD); cx.lineTo(PAD+W, CH-PAD);
+  cx.moveTo(PAD, CH-PAD); cx.lineTo(PAD, CH-PAD-H); cx.stroke();
+  cx.fillStyle = '#8a8378'; cx.font = '12px sans-serif'; cx.textAlign = 'center';
+  cx.fillText('spiciness →', PAD+W/2, CH-8);
+  cx.save(); cx.translate(12, CH-PAD-H/2); cx.rotate(-Math.PI/2); cx.fillText('price →', 0, 0); cx.restore();
+  // EDA-lite histograms (10 bins): how the dishes DISTRIBUTE along each feature
+  const hb1 = new Array(10).fill(0), hb2 = new Array(10).fill(0);
+  for (const it of S.items){ hb1[Math.min(9, Math.floor(it.x1*10))]++; hb2[Math.min(9, Math.floor(it.x2*10))]++; }
+  histBins = [hb1, hb2];
+  cx.fillStyle = 'rgba(138,131,120,.35)';
+  for (let b = 0; b < 10; b++){
+    cx.fillRect(PAD + b*W/10 + 2, CH-PAD+3, W/10-4, hb1[b]*3);
+    cx.fillRect(PAD-3-hb2[b]*3, CH-PAD-H + (9-b)*H/10 + 2, hb2[b]*3, H/10-4);
+  }
+  // items
+  const preds = S.run;
+  for (const it of S.items){
+    const X = px(it.x1), Y = py(it.x2);
+    const r = rr.ratings[it.id];
+    if (r === undefined){
+      cx.beginPath(); cx.arc(X, Y, 4.5, 0, 7);
+      cx.fillStyle = '#c9c2b4'; cx.fill();
+      cx.strokeStyle = '#8a8378'; cx.lineWidth = 1; cx.stroke();
+    } else if (rr.mode === 'stars'){
+      cx.beginPath(); cx.arc(X, Y, 9, 0, 7); cx.fillStyle = starColor(r); cx.fill();
+      cx.fillStyle = '#fff'; cx.font = 'bold 11px sans-serif'; cx.fillText(r, X, Y+4);
+    } else if (r === 1) drawHeart(X, Y, 12, getComputedStyle(document.documentElement).getPropertyValue('--like'));
+    else drawCross(X, Y, 5.5, getComputedStyle(document.documentElement).getPropertyValue('--dislike'));
+    if (it.id === coldOpenId && r === undefined && S.source === 'self' && Object.keys(S.self).length === 0){
+      cx.strokeStyle = '#c2185b'; cx.lineWidth = 2.5;
+      cx.beginPath(); cx.arc(X, Y, 11 + 2*Math.sin(Date.now()/220), 0, 7); cx.stroke();
+      cx.fillStyle = '#c2185b'; cx.font = 'bold 13px "Comic Sans MS",cursive';
+      cx.textAlign = X > CW - 150 ? 'right' : 'left';
+      cx.fillText('rate me first!', X + (X > CW - 150 ? -18 : 18), Y - 12);
+      cx.textAlign = 'center';
+    }
+    if (hoverId === it.id){
+      cx.strokeStyle = '#c2185b'; cx.lineWidth = 2;
+      cx.beginPath(); cx.arc(X, Y, 13, 0, 7); cx.stroke();
+    }
+  }
+  // WHY these recommendations: rank rings — the top-5 sit where f's surface predicts highest
+  if (S.run && S._lastRec && S.track && !simOn){
+    S._lastRec.forEach((u, k) => {
+      const X = px(u.it.x1), Y = py(u.it.x2);
+      cx.strokeStyle = '#1a5fb4'; cx.lineWidth = 1.8;
+      cx.beginPath(); cx.arc(X, Y, 8.5, 0, 7); cx.stroke();
+      cx.fillStyle = '#1a5fb4'; cx.font = 'bold 10px sans-serif';
+      cx.fillText(String(k+1), X + 13, Y - 9);
+    });
+  }
+  // invented dish probe: a brand-new input the model has never seen
+  if (S.probe){
+    const [qx, qy] = S.probe, Xp = px(qx), Yp = py(qy);
+    cx.save();
+    cx.strokeStyle = '#c2185b'; cx.lineWidth = 2.2;
+    cx.beginPath(); cx.moveTo(Xp, Yp-8); cx.lineTo(Xp+8, Yp); cx.lineTo(Xp, Yp+8); cx.lineTo(Xp-8, Yp); cx.closePath();
+    cx.fillStyle = '#fff'; cx.fill(); cx.stroke();
+    cx.fillStyle = '#c2185b'; cx.font = 'bold 11px sans-serif'; cx.fillText('?', Xp, Yp+4);
+    if (S.run || simOn){
+      const pr = probAt(qx, qy);
+      cx.font = 'bold 12px ui-monospace,monospace'; cx.textAlign = Xp > CW-120 ? 'right' : 'left';
+      cx.fillText(rr.mode === 'stars' ? `\u0177=${pr.toFixed(1)}\u2605` : `p=${Math.min(1, Math.max(0, pr)).toFixed(2)}`,
+        Xp + (Xp > CW-120 ? -14 : 14), Yp - 10);
+      cx.textAlign = 'center';
+    }
+    cx.restore();
+  }
+  // residual sticks: linear lens on stars mode only
+  if ((S.run || simOn) && S.lens === 'linear' && rr.mode === 'stars'){
+    cx.strokeStyle = 'rgba(43,43,43,.6)'; cx.lineWidth = 1.5;
+    for (const idStr of Object.keys(rr.ratings)){
+      const it = S.items[+idStr];
+      const pred = probAt(it.x1, it.x2);
+      const resid = rr.ratings[it.id] - pred;
+      cx.beginPath(); cx.moveTo(px(it.x1)+11, py(it.x2));
+      cx.lineTo(px(it.x1)+11, py(it.x2) - resid*18); cx.stroke();
+    }
+    cx.fillStyle = '#8a8378'; cx.font = '11px sans-serif'; cx.textAlign = 'left';
+    cx.fillText('| beside a rated dish = residual: how far the fit misses it (up = rated higher than predicted)', PAD + 6, CH - PAD - H + 14);
+    cx.textAlign = 'center';
+  }
+}
+
+/* ---------------- menu board ---------------- */
+let hoverId = null;
+function buildMenu(){
+  const m = $('menu'); m.innerHTML = '';
+  const rr = ratingsNow();
+  for (const it of S.items){
+    const d = document.createElement('div');
+    d.className = 'card'; d.id = 'card'+it.id;
+    const k1 = Math.max(1, Math.round(it.x1*5)), k2 = Math.max(1, Math.round(it.x2*4));
+    const sp = '🌶'.repeat(k1);
+    const pr = '$'.repeat(k2);
+    let rateHtml = '';
+    const r = rr.ratings[it.id];
+    if (S.source === 'persona'){
+      rateHtml = r === undefined ? '<span class="note">unrated (held out)</span>'
+        : (rr.mode === 'stars' ? '★'.repeat(r) + '<span class="note">'+'★'.repeat(5-r).replace(/./g,'')+'</span>'
+           : (r === 1 ? '<b style="color:var(--like)">♥ like</b>' : '<b style="color:var(--dislike)">✕ dislike</b>'));
+    } else if (S.target === 'binary'){
+      rateHtml = `<button class="rlike ${r===1?'likeOn':''}" data-id="${it.id}">♥</button>` +
+                 `<button class="rdis ${r===0?'dislikeOn':''}" data-id="${it.id}">✕</button>`;
+    } else {
+      for (let s = 1; s <= 5; s++)
+        rateHtml += `<span class="star ${r!==undefined && s<=r ? 'on':''}" data-id="${it.id}" data-s="${s}">★</span>`;
+    }
+    let predHtml = '';
+    if (S.run && r === undefined){
+      const p = modelProbAt(it.x1, it.x2);
+      predHtml = rr.mode === 'stars'
+        ? `<span class="pred">guess ${p.toFixed(1)}★${(p < 1 || p > 5) ? ' (!)' : ''}</span>`
+        : `<span class="pred">${p >= 0.5 ? '♥' : '✕'}? p=${Math.min(1, Math.max(0, p)).toFixed(2)}${S.lens==='linear' && (p>1||p<0) ? ' (!)' : ''}</span>`;
+    }
+    d.title = `spiciness ${it.x1.toFixed(2)} · price ${it.x2.toFixed(2)}`;
+    d.innerHTML = `<div class="nm">${it.name}</div><div class="ft">${sp} · ${pr}</div><div class="rate">${rateHtml}${predHtml}</div>`;
+    d.onmouseenter = () => { hoverId = it.id; hoverInfo(it); drawSpace(); };
+    d.onmouseleave = () => { hoverId = null; $('hoverLine').textContent = 'hover the space or the menu to inspect an item'; drawSpace(); };
+    m.appendChild(d);
+  }
+  m.querySelectorAll('.rlike').forEach(b => b.onclick = () => rate(+b.dataset.id, 1));
+  m.querySelectorAll('.rdis').forEach(b => b.onclick = () => rate(+b.dataset.id, 0));
+  m.querySelectorAll('.star').forEach(b => b.onclick = () => rate(+b.dataset.id, +b.dataset.s));
+}
+
+/* ---------------- dataset table: the same data as rows × columns ---------------- */
+let tableOn = false;
+$('btnTable').onclick = () => {
+  tableOn = !tableOn;
+  $('btnTable').textContent = tableOn ? 'Cards' : 'Table';
+  $('menu').classList.toggle('hidden', tableOn);
+  $('dataWrap').classList.toggle('hidden', !tableOn);
+  renderTable();
+};
+function renderTable(){
+  if (!tableOn) return;
+  const t = $('dataTbl');
+  if (S.forecast){
+    $('dataNote').innerHTML = 'the forecast dataset — each <b>row</b> is one day (a data point): inputs = day, rain, temp; target = sales. &#375; = the model queried at that day; * = the future.';
+    let h = '<tr><th class="l">day</th><th>rain</th><th>temp</th><th>sales $ (target)</th><th>model &#375;</th></tr>';
+    if (S.frun) for (const o of S.frun.data){
+      const fut = o.d > 24;
+      const yCell = fut && !S.frevealed ? '<td class="mut">? (future)</td>' : `<td${fut ? ' class="mut"' : ''}>$${o.y.toFixed(0)}</td>`;
+      h += `<tr id="frow${o.d}" class="${S.fsel === o.d ? 'sel' : ''}"><td class="l">${o.d}${fut ? ' *' : ''}</td><td>${o.rain ? '\u2614' : '\u2014'}</td><td>${o.temp.toFixed(0)}\u00b0F</td>${yCell}<td class="mut">$${S.frun.pred(o.d, o.rain, o.temp).toFixed(0)}</td></tr>`;
+    }
+    t.innerHTML = h;
+    t.querySelectorAll('tr[id^="frow"]').forEach(row => {
+      const dd = +row.id.slice(4);
+      row.onmouseenter = () => { S.fhover = dd; if (S.fview === 'time') S.fprobe = dd; drawSpace(); };
+      row.onmouseleave = () => { S.fhover = null; if (S.fview === 'time') S.fprobe = null; drawSpace(); };
+      row.onclick = () => { S.fsel = (S.fsel === dd ? null : dd); renderTable(); drawSpace(); };
+    });
+    return;
+  }
+  const rr = ratingsNow();
+  $('dataNote').innerHTML = 'the same menu as a table — each <b>row</b> is one data point, each <b>column</b> a feature; <b>rating</b> is the target the model learns from. Hover a row to find it in the space.';
+  let h = `<tr><th class="l">#</th><th class="l">dish</th><th>spiciness</th><th>price</th><th>rating</th><th>model &#375;</th></tr>`;
+  for (const it of S.items){
+    const rv = rr.ratings[it.id];
+    const p = S.run ? modelProbAt(it.x1, it.x2) : null;
+    const rCell = rv === undefined ? '<td class="mut">&mdash;</td>'
+      : `<td><b>${rr.mode === 'stars' ? rv + '&#9733;' : (rv === 1 ? '&#9829; 1' : '&#10005; 0')}</b></td>`;
+    const pCell = p === null ? '<td class="mut">&mdash;</td>'
+      : `<td class="mut">${rr.mode === 'stars' ? p.toFixed(2) + ((p < 1 || p > 5) ? ' (!)' : '') : Math.min(1, Math.max(0, p)).toFixed(2)}</td>`;
+    h += `<tr id="drow${it.id}" class="${hoverId === it.id ? 'hot' : ''}"><td class="l">${it.id}</td><td class="l">${it.name}</td><td>${it.x1.toFixed(2)}</td><td>${it.x2.toFixed(2)}</td>${rCell}${pCell}</tr>`;
+  }
+  t.innerHTML = h;
+  t.querySelectorAll('tr[id]').forEach(row => {
+    const id = +row.id.slice(4);
+    row.onmouseenter = () => { hoverId = id; hoverInfo(S.items[id]); row.classList.add('hot'); drawSpace(); };
+    row.onmouseleave = () => { hoverId = null; row.classList.remove('hot');
+      $('hoverLine').textContent = 'hover the space or the menu to inspect an item'; drawSpace(); };
+  });
+}
+function hoverInfo(it){
+  const rr = ratingsNow();
+  const r = rr.ratings[it.id];
+  let s = `${it.name} — spiciness ${it.x1.toFixed(2)}, price ${it.x2.toFixed(2)}`;
+  if (r !== undefined) s += rr.mode === 'stars' ? ` · rated ${r}★` : ` · ${r===1?'liked':'disliked'}`;
+  if (S.run && r === undefined){
+    const p = modelProbAt(it.x1, it.x2);
+    s += rr.mode === 'stars' ? ` · model guesses ${p.toFixed(2)}★${(p < 1 || p > 5) ? ' — outside the 1–5 scale (!)' : ''}` : ` · model says ${(p>=0.5?'like':'dislike')} (p=${p.toFixed(2)})`;
+  }
+  if (S.run && r !== undefined && S.lens === 'linear' && rr.mode === 'stars'){
+    const p = modelProbAt(it.x1, it.x2), d = r - p;
+    s += ` · model ŷ ${p.toFixed(2)} · residual ${d >= 0 ? '+' : '−'}${Math.abs(d).toFixed(2)} (the | stick)`;
+  }
+  $('hoverLine').textContent = s;
+}
+function rate(id, v){
+  if (S.source !== 'self') return;
+  const guessed = S.run ? modelProbAt(S.items[id].x1, S.items[id].x2) : null;
+  if (S.target === 'binary' && S.self[id] === v) delete S.self[id];   // click again to clear
+  else S.self[id] = v;
+  if (guessed !== null && S.self[id] !== undefined && S.target === 'binary'){
+    const g = guessed >= 0.5 ? 1 : 0;
+    toast(g === v ? 'The model guessed that right ✓' : 'The model guessed wrong ✗ — it just learned from this.');
+  }
+  S.scenario = null; bumpStage(1);
+  retrain(); syncHash();
+}
+
+/* ---------------- metrics / recommend / loss ---------------- */
+function fmtCount(a, n){ return a === null ? '—' : `${Math.round(a*n)}/${n}`; }
+function refreshMetrics(){
+  const r = S.run;
+  if (!r){ $('mBase').textContent = $('mTrain').textContent = $('mPool').textContent = '—'; return; }
+  if (r.mode === 'binary'){
+    $('rowBaseL').textContent = 'baseline (majority)';
+    $('rowTrainL').textContent = 'train accuracy';
+    $('rowPoolL').textContent = 'held-out pool accuracy';
+    $('mTrain').textContent = fmtCount(r.trainAcc, r.nTrain);
+    $('mPool').textContent = r.poolAcc === null ? 'n/a (your own data)' : fmtCount(r.poolAcc, r.nPool);
+    $('mBase').textContent = r.baseAcc === null ? '—' : fmtCount(r.baseAcc, r.poolAcc === null ? r.nTrain : r.nPool);
+  } else {
+    $('rowBaseL').textContent = 'baseline RMSE (mean)';
+    $('rowTrainL').textContent = 'train RMSE';
+    $('rowPoolL').textContent = 'held-out pool RMSE';
+    $('mTrain').textContent = r.trainRmse.toFixed(3);
+    $('mPool').textContent = r.poolRmse === null ? 'n/a' : r.poolRmse.toFixed(3);
+    $('mBase').textContent = r.baseRmse.toFixed(3);
+  }
+}
+function refreshRec(){
+  const row = $('recRow'); row.innerHTML = ''; $('recVerdict').textContent = '';
+  $('btnReveal').classList.add('hidden');
+  if (!S.run) return;
+  const rr = ratingsNow();
+  const un = S.items.filter(it => rr.ratings[it.id] === undefined)
+    .map(it => ({ it, p: modelProbAt(it.x1, it.x2) }))
+    .sort((a,b) => b.p - a.p).slice(0, 5);
+  un.forEach((u, k) => {
+    const d = document.createElement('div'); d.className = 'recCard'; d.id = 'rec'+u.it.id;
+    const k1 = Math.max(1, Math.round(u.it.x1*5)), k2 = Math.max(1, Math.round(u.it.x2*4));
+    const g = rr.mode==='stars' ? 'guess '+u.p.toFixed(1)+'★'+((u.p<1||u.p>5)?' (!)':'') : 'p='+u.p.toFixed(2)+(S.lens==='linear'&&(u.p>1||u.p<0)?' (!)':'');
+    d.innerHTML = `<div class="nm">${u.it.name}</div><div class="ft">${'🌶'.repeat(k1)} · ${'$'.repeat(k2)}</div><div class="sc">#${k+1} · ${g}</div>`;
+    d.onmouseenter = () => { hoverId = u.it.id; hoverInfo(u.it); drawSpace(); };
+    d.onmouseleave = () => { hoverId = null; $('hoverLine').textContent = 'hover the space or the menu to inspect an item'; drawSpace(); };
+    row.appendChild(d);
+  });
+  if (S.source === 'persona' && un.length) $('btnReveal').classList.remove('hidden');
+  S._lastRec = un;
+}
+$('btnReveal').onclick = () => {
+  const pool = C.truthPool(S.persona, S.items, S.seed);
+  const rr = ratingsNow();
+  let ok = 0;
+  for (const u of S._lastRec || []){
+    const truth = pool[u.it.id];
+    const good = rr.mode === 'stars' ? truth >= 4 : truth === 1;
+    const el = $('rec'+u.it.id);
+    if (el) el.className = 'recCard ' + (good ? 'good' : 'bad');
+    if (good) ok++;
+  }
+  $('recVerdict').textContent = `${ok}/${(S._lastRec||[]).length} were actually good picks (persona ground truth).`;
+  bumpStage(2);
+};
+const lcv = $('loss'), lcx = lcv.getContext('2d');
+const LW = 640, LH = 170;
+lcv.width = LW*DPR; lcv.height = LH*DPR; lcv.style.width = LW + 'px'; lcv.style.height = LH + 'px';
+lcx.setTransform(DPR, 0, 0, DPR, 0, 0);
+function drawLoss(upTo){
+  lcx.clearRect(0,0,LW,LH);
+  const r = S.run;
+  if (!r || !r.losses || !r.losses.length){ lcx.fillStyle='#8a8378'; lcx.font='12px sans-serif';
+    lcx.fillText(S.lens==='linear' ? (S.solver === 'gd' ? 'no curve yet' : 'closed form — solved in one algebraic step, nothing to watch; switch Solver to Gradient descent') : 'no curve yet', 12, 24); return; }
+  const L = r.losses, V = r.vlosses || [];
+  const k = upTo === undefined ? L.length : Math.max(2, Math.min(L.length, upTo));
+  let mx = 0; for (let i = 0; i < k; i++){ if (L[i] > mx) mx = L[i]; if (V[i] > mx) mx = V[i]; }
+  mx = Math.max(mx, 0.05);
+  const X = i => 34 + i/(L.length-1)*(LW-46);
+  const Y = v => 12 + (1 - v/mx)*(LH-34);
+  lcx.strokeStyle = '#c9c2b4'; lcx.lineWidth = 1;
+  lcx.strokeRect(34, 12, LW-46, LH-34);
+  lcx.strokeStyle = '#2b2b2b'; lcx.lineWidth = 2; lcx.beginPath();
+  for (let i = 0; i < k; i++){ if (i === 0) lcx.moveTo(X(i), Y(L[i])); else lcx.lineTo(X(i), Y(L[i])); }
+  lcx.stroke();
+  if (V.length){
+    lcx.strokeStyle = '#c2185b'; lcx.setLineDash([5,4]); lcx.beginPath();
+    for (let i = 0; i < Math.min(k, V.length); i++){ if (i === 0) lcx.moveTo(X(i), Y(V[i])); else lcx.lineTo(X(i), Y(V[i])); }
+    lcx.stroke(); lcx.setLineDash([]);
+  }
+  lcx.fillStyle = '#8a8378'; lcx.font = '11px sans-serif';
+  lcx.fillText('epochs →', LW-70, LH-4);
+  lcx.fillText('train', 40, 24); lcx.fillStyle = '#c2185b'; lcx.fillText('held-out', 76, 24);
+}
+
+/* ---------------- watch training ---------------- */
+let watching = false;
+$('btnWatch').onclick = async () => {
+  if (watching || (S.lens === 'linear' && S.solver !== 'gd') || !S.run){
+    if (S.lens === 'linear') toast('Closed form solves in ONE algebraic step — switch Solver to Gradient descent to have something to watch.');
+    return; }
+  watching = true;
+  const cfg = cfgNow(), total = cfg.epochs, steps = 24;
+  for (let s = 1; s <= steps && watching; s++){
+    const part = Object.assign({}, cfg, { epochs: Math.max(2, Math.round(total*s/steps)) });
+    S.run = C.runConfig(part);
+    drawSpace(); drawLoss();
+    await new Promise(r => setTimeout(r, 90));
+  }
+  watching = false;
+  S.run = C.runConfig(cfgNow());
+  refreshAll(); bumpStage(3);
+};
+
+/* ---------------- solver: closed form vs gradient descent (linear only) ---------------- */
+function updateSolverUI(){
+  const showRow = S.lens === 'linear' && !S.forecast && !!S.track;
+  $('solverRow').classList.toggle('hidden', !showRow);
+  const c = S.track ? TRACKCFG[S.track] : null;
+  const showWatch = !S.forecast && (S.lens === 'linear' ? S.solver === 'gd' : (c ? c.watch : true));
+  $('btnWatch').classList.toggle('hidden', !showWatch);
+}
+function refreshSolNote(){
+  if (S.lens === 'linear' && S.solver === 'gd' && S.run && !S.forecast){
+    const cr = C.runConfig(Object.assign({}, cfgNow(), { solver: 'closed' }));
+    $('solNote').textContent = S.run.mode === 'stars'
+      ? `— chasing the closed form: GD ${S.run.trainRmse.toFixed(3)} vs closed ${cr.trainRmse.toFixed(3)} train RMSE after ${cfgNow().epochs} epochs — press Watch training`
+      : '— same minimum, reached step by step — press Watch training';
+  } else $('solNote').textContent = '— two roads to the same minimum';
+}
+chip('ffChips', v => { S.ffeat = v;
+  if (S.forecast){ S.frun = forecastFit(); refreshForecastUI(); syncHash();
+    if (v === 'dayrain' && S.frun.rainW !== null)
+      toast(`The model just read the weather: rain coefficient \u2248 $${S.frun.rainW.toFixed(0)} per rainy day. Information the input can see, the fit can use.`);
+    if (v === 'full' && S.frun.tempW !== null)
+      toast(`Two readable weights now: rain \u2248 $${S.frun.rainW.toFixed(0)} per rainy day \u00b7 temp \u2248 $${S.frun.tempW.toFixed(1)} per \u00b0F. A continuous input bends every day a little \u2014 note the \u2715 marks floating off the slice.`);
+  } });
+chip('solChips', v => { S.solver = v; retrain(); syncHash();
+  if (v === 'gd') toast('Same problem, other road: watch gradient descent walk down to the line the closed form computes in one step.'); });
+
+/* ---------------- hand fit: be the optimizer ---------------- */
+function handEval(){
+  if (!S.run || !S.hand) return;
+  const rr = ratingsNow();
+  const ids = Object.keys(rr.ratings).map(Number);
+  let msg = '';
+  if (rr.mode === 'binary'){
+    let ok = 0, L = 0, n = ids.length;
+    for (const id of ids){
+      const it = S.items[id], y = rr.ratings[id];
+      const p = Math.min(1-1e-9, Math.max(1e-9, modelProbAt(it.x1, it.x2)));
+      if ((p >= 0.5 ? 1 : 0) === y) ok++;
+      L += -(y*Math.log(p) + (1-y)*Math.log(1-p));
+    }
+    const opt = S.run.losses.length ? S.run.losses[S.run.losses.length-1] : null;
+    msg = `your fit: ${ok}/${n} on train, loss ${(L/n).toFixed(3)}` + (opt !== null ? ` — the optimizer found ${opt.toFixed(3)}. Can you beat it?` : '');
+  } else {
+    let se = 0, n = ids.length;
+    for (const id of ids){
+      const it = S.items[id];
+      const d = modelProbAt(it.x1, it.x2) - rr.ratings[id];
+      se += d*d;
+    }
+    msg = `your fit: train RMSE ${Math.sqrt(se/n).toFixed(3)} — closed form gets ${S.run.trainRmse.toFixed(3)}. Can you match it?`;
+  }
+  $('handMsg').textContent = msg;
+}
+function setHand(on){
+  if (on && S.lens === 'mlp'){
+    $('chkHand').checked = false;
+    toast(`MLP with hidden=${S.hidden} has ${S.hidden*4+1} parameters — no sliders for that. THIS is why we need an optimizer.`);
+    return;
+  }
+  if (on && S.degree > 1){
+    $('chkHand').checked = false;
+    toast('Hand fit works at degree 1 — ' + (C.polyTerms(S.degree).length+1) + ' polynomial weights is already optimizer territory.');
+    return;
+  }
+  S.hand = on;
+  $('handCtl').classList.toggle('hidden', !on);
+  $('handScore').classList.toggle('hidden', !on);
+  if (on && S.run && S.run.w && !S.run.w.W1){
+    // start from zero, not the answer
+    S.hw = [0, 0, 0];
+    for (const [i, id] of [[0,'hw0'],[1,'hw1'],[2,'hw2']]) $(id).value = 0;
+  }
+  drawSpace(); drawInspect(); refreshRec(); handEval();
+}
+$('chkHand').onchange = () => setHand($('chkHand').checked);
+for (const [i, id] of [[0,'hw0'],[1,'hw1'],[2,'hw2']])
+  $(id).oninput = () => { S.hw[i] = +$(id).value; drawSpace(); drawInspect(); handEval(); };
+$('btnSnap').onclick = () => {
+  if (!S.run || !S.run.w || S.run.w.W1) return;
+  const w = S.run.w;
+  S.hw = [w[0], w[1], w[2]];
+  $('hw0').value = Math.max(-4, Math.min(4, w[0]));
+  $('hw1').value = Math.max(-4, Math.min(4, w[1]));
+  $('hw2').value = Math.max(-4, Math.min(4, w[2]));
+  drawSpace(); drawInspect(); handEval();
+  toast('Snapped to the trained optimum — that is the point the optimizer descends to.');
+};
+
+/* ---------------- scenarios + POE ---------------- */
+function applyScenario(id){
+  const sc = SCEN[id];
+  if (S.track !== 'compare'){ S.bet = null; runScenario(id); return; }   // bets belong to the Compare room
+  S.pendingScenario = id;
+  $('poe').style.display = 'block';
+  $('poe').scrollIntoView({ block:'nearest' });
+}
+document.querySelectorAll('.poeOpt').forEach(b => b.onclick = () => {
+  S.bet = b.dataset.v;
+  $('poe').style.display = 'none';
+  runScenario(S.pendingScenario);
+});
+function runScenario(id){
+  exitForecast();
+  const sc = SCEN[id];
+  S.scenario = id; S.source = 'persona'; S.persona = sc.persona; S.target = sc.target;
+  S.scN = sc.n; S.scFlips = sc.flips;
+  if (S.track === 'compare' || !S.track){ S.lens = sc.lens; S.hidden = sc.hidden; }
+  else { S.lens = TRACKCFG[S.track].lens; }
+  S.degree = 1; $('degIn').value = 1; $('degVal').textContent = 1;
+  if (S.hand){ $('chkHand').checked = false; setHand(false); }
+  setChip('srcChips','persona'); setChip('tgtChips', sc.target); setChip('lensChips', sc.lens);
+  $('personaSel').value = sc.persona; $('personaSel').classList.remove('hidden');
+  $('hidIn').value = sc.hidden; $('hidVal').textContent = sc.hidden;
+  $('hidWrap').classList.toggle('hidden', sc.lens !== 'mlp');
+  bumpStage(id === 'sc3' ? 3 : 2);
+  // run ALL lenses headless for the bet table
+  const results = {};
+  for (const lens of (sc.target === 'stars' ? ['linear'] : ['linear','logistic','mlp'])){
+    const hp = lens === 'mlp' ? (sc.hidden >= 12 ? HP.mlp16 : HP.mlp) : HP.logistic;
+    const r = C.runConfig({ seed:S.seed, persona:sc.persona, n:sc.n, flips:sc.flips, lens:lens,
+                            hidden: lens === 'mlp' ? (id==='sc2b' ? 4 : sc.hidden) : 0, lr:hp.lr, epochs:hp.epochs });
+    results[lens] = r.mode === 'binary' ? r.poolAcc : -r.poolRmse;
+  }
+  let win = null, best = -1e9;
+  for (const k of Object.keys(results)) if (results[k] > best){ best = results[k]; win = k; }
+  retrain();
+  const fmt = k => results[k] === undefined ? '' : `${k} ${results[k] >= 0 ? Math.round(results[k]*S.run.nPool)+'/'+S.run.nPool : (-results[k]).toFixed(2)}`;
+  const betLine = S.bet ? (S.bet === win ? `Your bet on ${S.bet}: ✓ correct.` : `Your bet on ${S.bet}: ✗ — ${win} won.`) : '';
+  toast(`${sc.label}: held-out — ${Object.keys(results).map(fmt).join(' · ')}. ${betLine}`);
+  $('stageHint').textContent = ({
+    sc1:  "Linear's home turf: graded targets, readable coefficients, tiny data. Note the residual sticks.",
+    sc2a: 'The Purist is linearly separable — logistic wins clean. Trust established. Now try XOR upset.',
+    sc2b: 'The Contrarian is XOR: the straight boundary lies flat (coin-flip pool accuracy). Two escapes: switch to MLP (hidden=4) — learn the features; or keep Logistic and raise degree to 2 — engineer them (x1·x2 does the trick).',
+    sc3:  'Scissors: 10 ratings, one mislabeled. MLP h=16 memorizes it (train perfect, pool collapses); Logistic shrugs it off. Watch the dashed curve rise.',
+  })[id] || '';
+}
+$('sc1').onclick = () => applyScenario('sc1');
+$('sc2a').onclick = () => applyScenario('sc2a');
+$('sc2b').onclick = () => applyScenario('sc2b');
+$('sc3').onclick = () => applyScenario('sc3');
+
+/* ---------------- hierarchical tracks: one algorithm, one room ---------------- */
+const TRACKCFG = {
+  linear:   { lens:'linear',   pick:false, tgt:true,  deg:true,  hid:false, hand:true,  watch:false,
+              sc:['sc1'], poe:false, slots:false, crumb:'Linear / Polynomial Regression' },
+  logistic: { lens:'logistic', pick:false, tgt:false, deg:true,  hid:false, hand:true,  watch:true,
+              sc:['sc2a'], poe:false, slots:false, crumb:'Logistic Regression' },
+  mlp:      { lens:'mlp',      pick:false, tgt:false, deg:false, hid:true,  hand:false, watch:true,
+              sc:[], poe:false, slots:false, crumb:'MLP' },
+  compare:  { lens:null,       pick:true,  tgt:true,  deg:true,  hid:true,  hand:false, watch:true,
+              sc:['sc2a','sc2b','sc3'], poe:true, slots:true, crumb:'Compare & Bet' },
+  forecast: { lens:'linear',   pick:false, tgt:true,  deg:true,  hid:false, hand:false, watch:false,
+              sc:[], poe:false, slots:false, crumb:'Forecast · regression in time' },
+};
+function showHome(){
+  exitForecast();
+  S.track = null;
+  $('home').classList.remove('hidden');
+  document.querySelector('main').classList.add('hidden');
+  $('btnHome').classList.add('hidden');
+  $('roomNav').classList.add('hidden');
+}
+function enterTrack(tr){
+  exitForecast();
+  const c = TRACKCFG[tr]; if (!c) return;
+  S.track = tr;
+  $('home').classList.add('hidden');
+  document.querySelector('main').classList.remove('hidden');
+  $('btnHome').classList.remove('hidden');
+  $('btnHome').textContent = '\u2302 all models \u00b7 now: ' + c.crumb;
+  $('roomNav').classList.remove('hidden');
+  setChip('roomChips', tr);
+  if (c.lens){ S.lens = c.lens; setChip('lensChips', c.lens); }
+  if (tr === 'logistic' || tr === 'mlp'){
+    if (S.target === 'stars'){ S.target = 'binary'; setChip('tgtChips','binary'); if (S.source === 'self') S.self = {}; }
+  }
+  if (tr === 'linear' && S.source === 'persona' && S.persona !== 'regular'){ S.persona = 'regular'; $('personaSel').value = 'regular'; S.target = 'stars'; setChip('tgtChips','stars'); }
+  $('lensPick').classList.toggle('hidden', !c.pick);
+  $('tgtChips').closest('.row').classList.toggle('hidden', !c.tgt);
+  $('degWrap').classList.toggle('hidden', !c.deg || S.lens === 'mlp');
+  $('hidWrap').classList.toggle('hidden', !c.hid || S.lens !== 'mlp');
+  $('handRow').classList.toggle('hidden', !c.hand);
+  $('btnWatch').classList.toggle('hidden', !c.watch);
+  for (const id of ['sc1','sc2a','sc2b','sc3','sc4']) $(id).classList.toggle('hidden', !c.sc.includes(id));
+  $('scRow').classList.toggle('hidden', c.sc.length === 0);
+  $('btnSaveA').classList.toggle('hidden', !c.slots);
+  $('btnSaveB').classList.toggle('hidden', !c.slots);
+  $('histBadge').classList.toggle('hidden', !c.slots);
+  if (S.hand && !c.hand){ $('chkHand').checked = false; setHand(false); }
+  bumpStage(tr === 'compare' || tr === 'forecast' ? 2 : 1);
+  if (tr === 'forecast'){ enterForecast(); syncHash(); return; }
+  retrain(); syncHash();
+}
+document.querySelectorAll('#home .track').forEach(d => d.onclick = () => enterTrack(d.dataset.tr));
+$('btnHome').onclick = () => { showHome(); syncHash(); };
+
+/* ---------------- progressive disclosure ---------------- */
+function bumpStage(k){ if (k > S.stage){ S.stage = k; applyStages(); } }
+function applyStages(){
+  $('lensRow').classList.toggle('hidden', S.stage < 1);
+  $('miscRow').classList.toggle('hidden', S.stage < 1);
+  $('recBox').classList.toggle('hidden', S.stage < 1);
+  $('inspBox').classList.toggle('hidden', S.stage < 1);
+  if (S.stage >= 1) drawInspect();
+  $('metricsBox').classList.toggle('hidden', S.stage < 2);
+  $('lossBox').classList.toggle('hidden', S.stage < 3);
+}
+
+/* ---------------- slots / csv / share ---------------- */
+function slotLine(s){ if (!s) return '—';
+  return `${s.lens}${s.lens==='mlp' ? '(h'+s.hidden+')' : ''} · ${s.metric}`; }
+function saveSlot(k){
+  if (!S.run){ toast('Nothing to save yet.'); return; }
+  const r = S.run;
+  const metric = r.mode === 'binary'
+    ? `pool ${r.poolAcc === null ? 'n/a' : fmtCount(r.poolAcc, r.nPool)}`
+    : `pool RMSE ${r.poolRmse === null ? 'n/a' : r.poolRmse.toFixed(3)}`;
+  S.slots[k] = { hash: cfgHash(), lens: S.lens, hidden: S.hidden, metric };
+  refreshSlots();
+}
+function refreshSlots(){
+  for (const k of ['A','B']) if (S.slots[k] && S.slots[k].hash !== cfgHash()){ S.slots[k] = null; toast('A/B slots cleared — the data/config changed, results were no longer comparable.'); }
+  $('histBadge').textContent = `A: ${slotLine(S.slots.A)}\nB: ${slotLine(S.slots.B)}`;
+}
+$('btnSaveA').onclick = () => saveSlot('A');
+$('btnSaveB').onclick = () => saveSlot('B');
+$('btnCsv').onclick = () => {
+  const rr = ratingsNow();
+  let csv = 'item,name,spiciness,price,rating\n';
+  for (const it of S.items){
+    const r = rr.ratings[it.id];
+    csv += `${it.id},"${it.name}",${it.x1.toFixed(4)},${it.x2.toFixed(4)},${r === undefined ? '' : r}\n`;
+  }
+  const a = document.createElement('a');
+  a.download = `ml-arena-ratings-seed${S.seed}.csv`;
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.click();
+};
+function rateString(){
+  let s = '';
+  for (let i = 0; i < 30; i++){ const v = S.self[i]; s += v === undefined ? 'x' : v; }
+  return s;
+}
+function syncHash(){
+  if (GMODE === 'g') return;   // grades module owns the hash in grades mode
+  history.replaceState(null, '', `#sd=${S.seed}&src=${S.source}&pe=${S.persona}&t=${S.target}&ln=${S.lens}&h=${S.hidden}&dg=${S.degree}` + (S.lens === 'linear' && S.solver === 'gd' ? '&sv=gd' : '') + (S.track === 'forecast' && S.ffeat !== 'day' ? `&ff=${S.ffeat === 'full' ? 'full' : 'rain'}` : '') + (S.track ? `&tr=${S.track}` : '')
+    + (S.scenario ? `&sc=${S.scenario}` : '') + (S.source === 'self' ? `&r=${rateString()}` : ''));
+}
+$('btnShare').onclick = () => {
+  if (GMODE === 'g') gSyncHash(); else syncHash();
+  const url = location.href;
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(url).then(() => toast('Link copied — same menu, same ratings, same fit.'), () => toast(url));
+  else toast(url);
+};
+function applyHashCfg(){
+  if (!location.hash) return;
+  const q = new URLSearchParams(location.hash.slice(1));
+  if (q.get('sd')) S.seed = +q.get('sd') || 12;
+  if (q.get('src') === 'persona') S.source = 'persona';
+  if (q.get('pe') && ['regular','purist','contrarian'].includes(q.get('pe'))) S.persona = q.get('pe');
+  if (q.get('t') === 'stars') S.target = 'stars';
+  if (q.get('ln') && ['linear','logistic','mlp'].includes(q.get('ln'))) S.lens = q.get('ln');
+  if (q.get('h')) S.hidden = Math.min(16, Math.max(0, +q.get('h')||4));
+  if (q.get('dg')) S.degree = Math.min(10, Math.max(1, +q.get('dg')||1));
+  if (q.get('sv') === 'gd') S.solver = 'gd';
+  if (q.get('ff') === 'rain') S.ffeat = 'dayrain';
+  if (q.get('ff') === 'full') S.ffeat = 'full';
+  const tr = q.get('tr');
+  if (tr && TRACKCFG[tr]) S._hashTrack = tr;
+  else if (location.hash.length > 1) S._hashTrack = 'compare';   // legacy links land in the full room
+  const r = q.get('r');
+  if (r && r.length === 30){ for (let i = 0; i < 30; i++) if (r[i] !== 'x') S.self[i] = +r[i]; }
+  if (q.get('sc') && SCEN[q.get('sc')]) S._hashScenario = q.get('sc');
+}
+
+/* ---------------- controls wiring ---------------- */
+function chip(gid, fn){ const g = $(gid);
+  g.querySelectorAll('button').forEach(b => b.onclick = () => {
+    g.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); fn(b.dataset.v); }); }
+function setChip(gid, v){ $(gid).querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+chip('roomChips', v => enterTrack(v));
+chip('srcChips', v => { exitForecast(); S.source = v; S.scenario = null; S.scN = 16; S.scFlips = 0;
+  $('personaSel').classList.toggle('hidden', v !== 'persona');
+  $('menuNote').textContent = v === 'persona' ? "— a persona's ratings. Unrated items are the held-out pool." : '— taste something, rate it. The model learns you.';
+  if (v === 'persona'){ S.target = C.personaRatings(S.persona, S.items, S.seed, 4, 0).mode; setChip('tgtChips', S.target); bumpStage(2); }
+  retrain(); syncHash(); });
+$('personaSel').onchange = () => { S.persona = $('personaSel').value; S.scenario = null;
+  S.target = S.persona === 'regular' ? 'stars' : 'binary'; setChip('tgtChips', S.target); retrain(); syncHash(); };
+chip('tgtChips', v => {
+  if (S.source === 'persona'){ setChip('tgtChips', S.target); toast('Target follows the persona: The Regular rates in stars, others like/dislike.'); return; }
+  if (v !== S.target){ S.target = v; S.self = {}; toast('Ratings cleared — the target type changed, old labels no longer mean the same thing.'); }
+  if (v === 'stars'){ S.lens = 'linear'; setChip('lensChips','linear'); $('lensNote').textContent = 'stars need a regression lens — linear only'; }
+  else $('lensNote').textContent = 'fit updates as you rate';
+  retrain(); syncHash(); });
+chip('lensChips', v => {
+  if (S.track && S.track !== 'compare'){ setChip('lensChips', TRACKCFG[S.track].lens); return; }
+  if (S.forecast && v !== 'linear'){ setChip('lensChips','linear'); toast('The forecast scene is regression-only \u2014 classification lenses need labels, not dollars.'); return; }
+  if (S.target === 'stars' && v !== 'linear'){ setChip('lensChips','linear'); toast('Classification lenses need like/dislike labels — switch the target to use them.'); return; }
+  S.lens = v; $('hidWrap').classList.toggle('hidden', v !== 'mlp');
+  $('degWrap').classList.toggle('hidden', v === 'mlp');
+  if (S.hand && v === 'mlp') setHand(false);
+  retrain(); syncHash(); });
+$('degIn').oninput = () => { S.degree = +$('degIn').value; $('degVal').textContent = S.degree;
+  if (S.hand && S.degree > 1){ $('chkHand').checked = false; setHand(false); }
+  retrain(); syncHash(); };
+$('hidIn').oninput = () => { S.hidden = +$('hidIn').value; $('hidVal').textContent = S.hidden; retrain(); syncHash(); };
+$('seedIn').onchange = () => { S.seed = (+$('seedIn').value|0) || 12; newWorld(); };
+$('btnWorld').onclick = () => { S.seed = (S.seed % 9999) + 1; $('seedIn').value = S.seed; newWorld(); };
+$('btnClear').onclick = () => { S.self = {}; S.scenario = null; retrain(); syncHash(); };
+function newWorld(){
+  S.items = C.genItems(S.seed); S.self = {}; S.scenario = null; S.slots = { A:null, B:null };
+  coldOpenId = C.pickIndices(S.seed, 1)[0];
+  retrain(); syncHash();
+}
+
+/* ---------------- canvas hover ---------------- */
+cv.addEventListener('mousemove', e => {
+  if (S.forecast){
+    if (S.fview === 'surf') return;
+    const rb = cv.getBoundingClientRect();
+    const mx = (e.clientX - rb.left)*(CW/rb.width);
+    const d = (mx - PAD)/W*31;
+    S.fprobe = (d >= 0.5 && d <= 31) ? d : null;
+    if (S.fprobe !== null && S.frun){
+      const nd = Math.max(1, Math.min(30, Math.round(S.fprobe)));
+      const tr0 = document.querySelector('#dataTbl tr.hot'); if (tr0) tr0.classList.remove('hot');
+      const el = $('frow' + nd); if (el){ el.classList.add('hot'); el.scrollIntoView({ block: 'nearest' }); }
+      const ra = S.frun.data[nd-1].rain, ta = S.frun.data[nd-1].temp;
+      $('hoverLine').textContent = `day ${S.fprobe.toFixed(0)}${ra ? ' \u2614' : ''}${S.frun.useTemp ? ' ' + ta.toFixed(0) + '\u00b0F' : ''} \u2192 predicted $${S.frun.pred(S.fprobe, ra, ta).toFixed(0)}` + (S.fprobe > 24 ? ' \u2014 forecasting the future off the fitted curve' : '');
+    }
+    drawSpace(); return;
+  }
+  const r = cv.getBoundingClientRect();
+  const mx = (e.clientX - r.left)*(CW/r.width), my = (e.clientY - r.top)*(CH/r.height);
+  // hovering the axis histograms: read the bin like a mini bar chart
+  if (histBins){
+    if (my > CH-PAD+2 && mx >= PAD && mx <= PAD+W){
+      const b = Math.min(9, Math.floor((mx-PAD)/W*10));
+      $('hoverLine').textContent = `distribution: ${histBins[0][b]} of ${S.items.length} dishes have spiciness ${(b/10).toFixed(1)}–${((b+1)/10).toFixed(1)} — the grey bars are 10-bin histograms of the menu`;
+      return;
+    }
+    if (mx < PAD-2 && my >= CH-PAD-H && my <= CH-PAD){
+      const b = Math.min(9, Math.floor(((CH-PAD) - my)/H*10));
+      $('hoverLine').textContent = `distribution: ${histBins[1][b]} of ${S.items.length} dishes have price ${(b/10).toFixed(1)}–${((b+1)/10).toFixed(1)} — the grey bars are 10-bin histograms of the menu`;
+      return;
+    }
+  }
+  let best = null, bd = 240;
+  for (const it of S.items){ const d = (px(it.x1)-mx)**2 + (py(it.x2)-my)**2; if (d < bd){ bd = d; best = it; } }
+  const prev = hoverId;
+  hoverId = best ? best.id : null;
+  if (best) hoverInfo(best);
+  else $('hoverLine').textContent = 'hover the space or the menu to inspect an item';
+  if (prev !== hoverId){ drawSpace(); const c = document.querySelector('.card.hot'); if (c) c.classList.remove('hot');
+    if (hoverId !== null){ const el = $('card'+hoverId); if (el){ el.classList.add('hot'); el.scrollIntoView({ block:'nearest' }); } }
+    const tr0 = document.querySelector('table.data tr.hot'); if (tr0) tr0.classList.remove('hot');
+    if (hoverId !== null && tableOn){ const el2 = $('drow'+hoverId); if (el2){ el2.classList.add('hot'); el2.scrollIntoView({ block:'nearest' }); } } }
+});
+cv.addEventListener('mouseleave', () => { hoverId = null; S.fprobe = null;
+  const tr0 = document.querySelector('#dataTbl tr.hot'); if (tr0) tr0.classList.remove('hot');
+  drawSpace(); });
+cv.addEventListener('click', e => {
+  if (S.forecast){
+    const rb = cv.getBoundingClientRect();
+    const mx = (e.clientX - rb.left)*(CW/rb.width), my = (e.clientY - rb.top)*(CH/rb.height);
+    let dd = null;
+    if (S.fview === 'time'){
+      const d = (mx - PAD)/W*31;
+      if (d >= 0.5 && d <= 30.5) dd = Math.max(1, Math.min(30, Math.round(d)));
+    } else {
+      let best = 200;
+      for (const p of fsProj){ const q = (p.x - mx)**2 + (p.y - my)**2; if (q < best){ best = q; dd = p.d; } }
+    }
+    if (dd !== null){
+      S.fsel = (S.fsel === dd ? null : dd);
+      renderTable(); drawSpace();
+      const el = $('frow' + dd); if (el && S.fsel) el.scrollIntoView({ block: 'nearest' });
+      if (S.fsel && S.frun){ const o = S.frun.data[dd-1];
+        toast(`day ${dd}${o.rain ? ' \u2614' : ''} ${o.temp.toFixed(0)}\u00b0F \u2014 ${o.d > 24 && !S.frevealed ? 'sales hidden (future)' : 'sales $' + o.y.toFixed(0)} \u00b7 model \u0177 $${S.frun.pred(o.d, o.rain, o.temp).toFixed(0)}`); }
+    }
+    return;
+  }
+  const r = cv.getBoundingClientRect();
+  const mx = (e.clientX - r.left)*(CW/r.width), my = (e.clientY - r.top)*(CH/r.height);
+  const qx = (mx - PAD)/W, qy = ((CH - PAD) - my)/H;
+  if (qx < 0 || qx > 1 || qy < 0 || qy > 1) return;
+  for (const it of S.items){ if ((px(it.x1)-mx)**2 + (py(it.x2)-my)**2 < 196){
+    toast(`That's ${it.name} \u2014 rate it in the menu.`); return; } }
+  if (S.probe && (px(S.probe[0])-mx)**2 + (py(S.probe[1])-my)**2 < 196){ S.probe = null; drawSpace(); return; }
+  S.probe = [qx, qy];
+  if (S.run){
+    const rr = ratingsNow();
+    const pr = modelProbAt(qx, qy);
+    toast(rr.mode === 'stars'
+      ? `Invented dish (\ud83c\udf36${qx.toFixed(2)} \u00b7 $${qy.toFixed(2)}) \u2192 the curve says ${pr.toFixed(1)}\u2605. New input in, prediction out \u2014 that is the whole point of fitting.`
+      : `Invented dish (\ud83c\udf36${qx.toFixed(2)} \u00b7 $${qy.toFixed(2)}) \u2192 model says ${pr >= 0.5 ? 'like' : 'dislike'} (p=${Math.min(1, Math.max(0, pr)).toFixed(2)}).`);
+  } else toast('Invented dish placed \u2014 rate 3 real items first so a model exists to ask.');
+  drawSpace();
+});
+
+/* ---------------- Forecast scene: the canonical regression picture ---------------- */
+// Food-truck daily sales: trend + weekly seasonality + noise. Continuous y, time as x,
+// and "beyond the data" is literally THE FUTURE. Uses the same twinned linearFit engine
+// on 1D polynomial features of day/30.
+function forecastData(){
+  const rng = C.mulberry32(S.seed*555 + 1);
+  const phase = rng()*6.283;
+  const rrng = C.mulberry32(S.seed*777 + 3);       // rain gets its own stream
+  const trng = C.mulberry32(S.seed*999 + 19);      // temperature too
+  const phase2 = trng()*6.283;
+  const days = [];
+  for (let d = 1; d <= 30; d++){
+    const rain = rrng() < 0.3 ? 1 : 0;             // ~1 day in 3 it rains (Miami!)
+    const temp = 84 + 8*Math.sin(6.283*d/11 + phase2) + (trng() - 0.5)*6;   // \u00b0F, continuous
+    const y = 320 + 6.5*d + 90*Math.sin(6.283*d/7 + phase) - 140*rain - 7*(temp - 84) + (rng() - 0.5)*70;
+    days.push({ d: d, y: y, rain: rain, temp: temp });
+  }
+  return days;
+}
+function forecastFit(){
+  const data = forecastData();
+  const train = data.filter(o => o.d <= 24);
+  const deg = S.degree, useRain = S.ffeat !== 'day', useTemp = S.ffeat === 'full';
+  const rows = train.map(o => { const x = o.d/30; const r = []; let v = 1;
+    for (let k = 1; k <= deg; k++){ v *= x; r.push(v); }
+    if (useRain) r.push(o.rain);
+    if (useTemp) r.push(o.temp);
+    return r; });
+  // standardize columns (population), keep transforms — same recipe as the 2D engine
+  const kk = deg + (useRain ? 1 : 0) + (useTemp ? 1 : 0), n = rows.length, mu = new Array(kk).fill(0), sd = new Array(kk).fill(0);
+  for (let j = 0; j < kk; j++){
+    for (let i = 0; i < n; i++) mu[j] += rows[i][j];
+    mu[j] /= n;
+    for (let i = 0; i < n; i++) sd[j] += (rows[i][j]-mu[j])*(rows[i][j]-mu[j]);
+    sd[j] = Math.sqrt(sd[j]/n) || 1;
+    for (let i = 0; i < n; i++) rows[i][j] = (rows[i][j]-mu[j])/sd[j];
+  }
+  let tAvg = 0; for (const o of train) tAvg += o.temp; tAvg /= train.length;
+  const w = C.linearFit(rows, train.map(o => o.y));
+  const pred = (d, rain, temp) => { const x = d/30; let v = 1, s = w[0];
+    for (let k = 1; k <= deg; k++){ v *= x; s += w[k]*(v - mu[k-1])/sd[k-1]; }
+    if (useRain) s += w[deg+1]*((rain || 0) - mu[deg])/sd[deg];
+    if (useTemp) s += w[deg+2]*((temp === undefined ? tAvg : temp) - mu[deg+1])/sd[deg+1];
+    return s; };
+  const rainW = useRain ? (w[deg+1]/sd[deg]) : null;   // de-standardized $ effect of rain
+  const tempW = useTemp ? (w[deg+2]/sd[deg+1]) : null; // $ per \u00b0F
+  let se = 0; for (const o of train){ const e = pred(o.d, o.rain, o.temp) - o.y; se += e*e; }
+  const future = data.filter(o => o.d > 24);
+  let fe = 0; for (const o of future){ const e = pred(o.d, o.rain, o.temp) - o.y; fe += e*e; }
+  let mean = 0; for (const o of train) mean += o.y; mean /= train.length;
+  let be = 0; for (const o of future){ const e = mean - o.y; be += e*e; }
+  return { data, train, future, pred, useRain, useTemp, rainW, tempW, tAvg,
+           trainRmse: Math.sqrt(se/train.length), futureRmse: Math.sqrt(fe/future.length),
+           baseRmse: Math.sqrt(be/future.length) };
+}
+function enterForecast(){
+  S.forecast = true; S.frevealed = false; S.fprobe = null;
+  S.fview = 'time'; setChip('fvChips', 'time');
+  // percepts block becomes the forecast dataset — the menu would be noise here
+  S._prevTableOn = tableOn; tableOn = true;
+  $('menu').classList.add('hidden'); $('dataWrap').classList.remove('hidden');
+  for (const id of ['btnTable','btnCsv','btnClear']) $(id).classList.add('hidden');
+  $('menuTitle').textContent = 'Dataset';
+  $('spaceTitle').textContent = 'Sales';
+  $('spaceNote').innerHTML = '— x: day · y: daily sales ($) · curve = the fit · the pink zone is the future';
+  // controls: only what the scene uses — seed (new data) + degree
+  $('srcChips').closest('.row').classList.add('hidden');
+  $('tgtLabel').classList.add('hidden'); $('tgtChips').classList.add('hidden');
+  $('btnWorld').textContent = 'New data';
+  $('ffeatRow').classList.remove('hidden');
+  $('hoverLine').textContent = 'hover the chart to query the curve at any day — the future included';
+  $('perSub').textContent = ' — sensors: the sales ledger, days 1–24';
+  $('funcSub').textContent = ' — f: day → daily sales. The curve IS the agent function';
+  S.lens = 'linear'; setChip('lensChips', 'linear');
+  $('degWrap').classList.remove('hidden'); $('hidWrap').classList.add('hidden');
+  $('fRow').classList.remove('hidden');
+  $('recBox').classList.add('hidden'); $('inspBox').classList.add('hidden'); $('lossBox').classList.add('hidden');
+  $('metricsBox').classList.remove('hidden');
+  $('menuNote').textContent = '— the sales ledger: 24 past days are the training set; the week ahead arrives on Reveal.';
+  $('stageHint').textContent = 'Fit a curve to the past, read the future off it. Then the real lesson: \u2614 days sag below the curve \u2014 no degree can explain what the input cannot see. Switch Features to day + rain and watch the RMSE. Reveal when ready.';
+  S.frun = forecastFit();
+  refreshForecastUI();
+}
+function exitForecast(){
+  if (!S.forecast) return;
+  S.forecast = false; S.frun = null; S.fprobe = null; S.fsel = null; S.fhover = null;
+  tableOn = !!S._prevTableOn;
+  $('btnTable').textContent = tableOn ? 'Cards' : 'Table';
+  $('menu').classList.toggle('hidden', tableOn);
+  $('dataWrap').classList.toggle('hidden', !tableOn);
+  for (const id of ['btnTable','btnCsv','btnClear']) $(id).classList.remove('hidden');
+  $('menuTitle').textContent = 'Menu';
+  $('spaceTitle').textContent = 'Taste space';
+  $('spaceNote').innerHTML = '— x: spiciness · y: price · grey axis bars: dish counts per bin (the data\'s distribution — hover them) · <span id="lensNote">fit updates as you rate</span>';
+  $('srcChips').closest('.row').classList.remove('hidden');
+  $('tgtLabel').classList.remove('hidden'); $('tgtChips').classList.remove('hidden');
+  $('btnWorld').textContent = 'New menu';
+  $('ffeatRow').classList.add('hidden');
+  $('hoverLine').textContent = 'hover the space or the menu to inspect an item';
+  $('perSub').textContent = ' — sensors: dish features + the diner’s ratings, collected by the house';
+  $('funcSub').textContent = ' — f: (spiciness, price) → rating. The learnable middle — most of the agent lives here';
+  $('fRow').classList.add('hidden');
+  $('menuNote').textContent = '\u2014 taste something, rate it. The model learns you.';
+  if (S.track === 'forecast') S.track = null;
+  $('stageHint').textContent = '';
+  applyStages();
+}
+function refreshForecastUI(){
+  drawSpace(); renderTable(); refreshEnv(); updateSolverUI();
+  const r = S.frun;
+  $('rowBaseL').textContent = 'baseline RMSE (mean of past)';
+  $('rowTrainL').textContent = 'fit RMSE (days 1\u201324)';
+  $('rowPoolL').textContent = 'forecast RMSE (days 25\u201330)';
+  $('mBase').textContent = '$' + r.baseRmse.toFixed(0);
+  $('mTrain').textContent = '$' + r.trainRmse.toFixed(0);
+  $('mPool').textContent = S.frevealed ? '$' + r.futureRmse.toFixed(0) : 'hidden \u2014 reveal it';
+  $('fNote').textContent = S.frevealed ? `forecast error over the revealed week: $${r.futureRmse.toFixed(0)} RMSE (baseline $${r.baseRmse.toFixed(0)})` : '';
+}
+function drawForecast(){
+  const r = S.frun; if (!r) return;
+  cx.clearRect(0, 0, CW, CH);
+  const yMinD = Math.min(...r.data.map(o => o.y)), yMaxD = Math.max(...r.data.map(o => o.y));
+  const yLo = yMinD - 120, yHi = yMaxD + 120;
+  const Xd = d => PAD + (d/31)*W, Yd = v => (CH - PAD) - (v - yLo)/(yHi - yLo)*H;
+  // the future zone
+  cx.fillStyle = 'rgba(194,24,91,.05)';
+  cx.fillRect(Xd(24.5), CH - PAD - H, PAD + W - Xd(24.5), H);
+  cx.strokeStyle = '#c2185b'; cx.setLineDash([4,4]); cx.lineWidth = 1.2;
+  cx.beginPath(); cx.moveTo(Xd(24.5), CH - PAD); cx.lineTo(Xd(24.5), CH - PAD - H); cx.stroke();
+  cx.setLineDash([]);
+  cx.fillStyle = 'rgba(194,24,91,.6)'; cx.font = '12px sans-serif'; cx.textAlign = 'center';
+  cx.fillText('the future', (Xd(24.5) + PAD + W)/2, CH - PAD - H + 18);
+  // axes
+  cx.strokeStyle = '#2b2b2b'; cx.lineWidth = 2;
+  cx.beginPath(); cx.moveTo(PAD, CH - PAD); cx.lineTo(PAD + W, CH - PAD);
+  cx.moveTo(PAD, CH - PAD); cx.lineTo(PAD, CH - PAD - H); cx.stroke();
+  cx.fillStyle = '#8a8378';
+  cx.fillText('days \u2192', PAD + W/2, CH - 8);
+  cx.save(); cx.translate(12, CH - PAD - H/2); cx.rotate(-Math.PI/2); cx.fillText('daily sales ($)', 0, 0); cx.restore();
+  // fitted curve(s), clipped — with rain in the model there are TWO conditional curves
+  cx.save(); cx.beginPath(); cx.rect(PAD, CH - PAD - H, W, H); cx.clip();
+  cx.strokeStyle = '#2b2b2b'; cx.lineWidth = 2.4; cx.beginPath();
+  for (let i = 0; i <= 140; i++){
+    const d = 31*i/140;
+    if (i === 0) cx.moveTo(Xd(d), Yd(r.pred(d, 0, r.tAvg))); else cx.lineTo(Xd(d), Yd(r.pred(d, 0, r.tAvg)));
+  }
+  cx.stroke();
+  if (r.useRain){
+    cx.strokeStyle = '#1a5fb4'; cx.lineWidth = 1.8; cx.setLineDash([6,4]); cx.beginPath();
+    for (let i = 0; i <= 140; i++){
+      const d = 31*i/140;
+      if (i === 0) cx.moveTo(Xd(d), Yd(r.pred(d, 1, r.tAvg))); else cx.lineTo(Xd(d), Yd(r.pred(d, 1, r.tAvg)));
+    }
+    cx.stroke(); cx.setLineDash([]);
+  }
+  cx.restore();
+  // with temp in the model each day's TRUE prediction uses its own temp — it floats off the slice
+  if (r.useTemp){
+    cx.strokeStyle = '#c2185b'; cx.lineWidth = 1.4;
+    for (const o of r.data){
+      if (o.d > 24 && !S.frevealed) continue;
+      const Yp = Yd(r.pred(o.d, o.rain, o.temp));
+      cx.beginPath(); cx.moveTo(Xd(o.d) - 4, Yp - 4); cx.lineTo(Xd(o.d) + 4, Yp + 4);
+      cx.moveTo(Xd(o.d) + 4, Yp - 4); cx.lineTo(Xd(o.d) - 4, Yp + 4); cx.stroke();
+    }
+  }
+  // training points (rainy days marked — THAT is what "day only" cannot see)
+  for (const o of r.train){
+    cx.beginPath(); cx.arc(Xd(o.d), Yd(o.y), 4.5, 0, 7);
+    cx.fillStyle = o.rain ? '#1a5fb4' : '#2b2b2b'; cx.fill();
+    if (o.rain){ cx.font = '11px sans-serif'; cx.fillText('\u2614', Xd(o.d), Yd(o.y) - 9); }
+  }
+  // revealed future truth
+  if (S.frevealed){
+    for (const o of r.future){
+      cx.beginPath(); cx.arc(Xd(o.d), Yd(o.y), 4.5, 0, 7);
+      cx.fillStyle = '#fff'; cx.fill();
+      cx.strokeStyle = o.rain ? '#1a5fb4' : '#8a8378'; cx.lineWidth = 1.6; cx.stroke();
+      if (o.rain){ cx.fillStyle = '#1a5fb4'; cx.font = '11px sans-serif'; cx.fillText('\u2614', Xd(o.d), Yd(o.y) - 9); }
+      cx.strokeStyle = 'rgba(194,24,91,.5)'; cx.lineWidth = 1.3;
+      cx.beginPath(); cx.moveTo(Xd(o.d), Yd(o.y)); cx.lineTo(Xd(o.d), Yd(r.pred(o.d, o.rain, o.temp))); cx.stroke();
+    }
+  }
+  // probe: query the curve at any day, incl. the future
+  if (S.fprobe !== null){
+    const d = S.fprobe;
+    const nd = Math.max(1, Math.min(30, Math.round(d)));
+    const rainAt = r.data[nd-1].rain, tempAt = r.data[nd-1].temp;
+    const v = r.pred(d, rainAt, tempAt);
+    cx.strokeStyle = '#c2185b'; cx.lineWidth = 1.8;
+    cx.save(); cx.beginPath(); cx.rect(PAD, CH - PAD - H, W, H); cx.clip();
+    cx.beginPath(); cx.moveTo(Xd(d), CH - PAD); cx.lineTo(Xd(d), Yd(v)); cx.lineTo(PAD, Yd(v)); cx.stroke();
+    cx.beginPath(); cx.arc(Xd(d), Yd(v), 5, 0, 7); cx.fillStyle = '#c2185b'; cx.fill();
+    cx.restore();
+    cx.fillStyle = '#c2185b'; cx.font = 'bold 13px ui-monospace,monospace';
+    cx.textAlign = Xd(d) > PAD + W - 190 ? 'right' : 'left';
+    cx.fillText(`day ${d.toFixed(0)}${rainAt ? ' \u2614' : ''}${r.useTemp ? ' ' + tempAt.toFixed(0) + '\u00b0F' : ''} \u2192 $${v.toFixed(0)}${d > 24 ? '  (forecast)' : ''}`,
+      Xd(d) + (Xd(d) > PAD + W - 190 ? -12 : 12), Math.max(CH - PAD - H + 34, Yd(v) - 10));
+    cx.textAlign = 'center';
+  }
+  // linked selection/hover rings (table \u21c4 chart)
+  for (const [dd, col] of [[S.fsel, '#1a5fb4'], [S.fhover, '#c2185b']]){
+    if (!dd) continue;
+    const o = r.data[dd-1];
+    const yv = (o.d > 24 && !S.frevealed) ? r.pred(o.d, o.rain, o.temp) : o.y;
+    cx.strokeStyle = col; cx.lineWidth = 2.2;
+    cx.beginPath(); cx.arc(Xd(o.d), Yd(yv), 9.5, 0, 7); cx.stroke();
+  }
+  cx.fillStyle = '#8a8378'; cx.font = '12px sans-serif'; cx.textAlign = 'left';
+  cx.fillText(r.useTemp
+    ? 'curves = SLICE at average temp \u00b7 \u2715 = each day\u2019s true prediction (its own temp) \u2014 off the slice, like the Fit view'
+    : r.useRain
+    ? '\u25cf dry \u00b7 \u2614 rainy \u00b7 solid = dry-day curve \u00b7 dashed blue = rainy-day curve \u00b7 hover to query any day'
+    : '\u25cf past days (training) \u00b7 \u2614 rainy \u2014 the input cannot see it! \u00b7 curve = the fit \u00b7 hover to query any day', PAD + 6, CH - PAD - H - 6);
+  cx.textAlign = 'center';
+}
+$('sc4').onclick = () => enterTrack('forecast');
+$('btnFuture').onclick = () => { if (!S.forecast) return; S.frevealed = true; refreshForecastUI();
+  toast(`The week arrived. Forecast RMSE $${S.frun.futureRmse.toFixed(0)} vs baseline $${S.frun.baseRmse.toFixed(0)} \u2014 was your degree honest, or did it hallucinate?`); };
+
+/* ---------------- Forecast: the model as a SURFACE over (day, temp) ---------------- */
+function drawForecastSurface(){
+  const r = S.frun; if (!r) return;
+  cx.clearRect(0, 0, CW, CH);
+  const tLo = Math.min(...r.data.map(o => o.temp)) - 2, tHi = Math.max(...r.data.map(o => o.temp)) + 2;
+  const zAll = r.data.map(o => o.y);
+  const zLo = Math.min(...zAll) - 60, zHi = Math.max(...zAll) + 60;
+  const zn = v => (Math.max(zLo, Math.min(zHi, v)) - zLo)/(zHi - zLo);
+  const cx0 = CW*0.5, cy0 = CH*0.60, sXY = CH*0.80, hZ = CH*0.42, fore = 0.45;
+  const sy = Math.sin(S.fyaw), cyw = Math.cos(S.fyaw);
+  const proj = (xn, yn, z) => {
+    const rx = (xn - 0.5)*cyw - (yn - 0.5)*sy;
+    const ry = (xn - 0.5)*sy + (yn - 0.5)*cyw;
+    return [cx0 + rx*sXY, cy0 + ry*fore*sXY - zn(z)*hZ, ry];
+  };
+  const nx = d => d/31, ny = t => (t - tLo)/(tHi - tLo);
+  // base square + future floor tint
+  const corners = [[0,0],[1,0],[1,1],[0,1]].map(c => proj(c[0], c[1], zLo));
+  cx.strokeStyle = '#c9c2b4'; cx.lineWidth = 1; cx.setLineDash([3,3]);
+  cx.beginPath(); cx.moveTo(corners[0][0], corners[0][1]);
+  for (let k = 1; k <= 4; k++) cx.lineTo(corners[k%4][0], corners[k%4][1]);
+  cx.stroke(); cx.setLineDash([]);
+  const fut = [[nx(24.5),0],[1,0],[1,1],[nx(24.5),1]].map(c => proj(c[0], c[1], zLo));
+  cx.fillStyle = 'rgba(194,24,91,.06)';
+  cx.beginPath(); cx.moveTo(fut[0][0], fut[0][1]);
+  for (let k = 1; k < 4; k++) cx.lineTo(fut[k][0], fut[k][1]);
+  cx.closePath(); cx.fill();
+  // sheet(s): dry always; rainy sheet floats below when the model has rain
+  const G = 18, quads = [];
+  const sheets = r.useRain ? [0, 1] : [0];
+  for (const rv of sheets){
+    for (let j = 0; j < G; j++) for (let i = 0; i < G; i++){
+      const d0 = 31*i/G, d1 = 31*(i+1)/G;
+      const t0 = tLo + (tHi - tLo)*j/G, t1 = tLo + (tHi - tLo)*(j+1)/G;
+      const q = [[d0,t0],[d1,t0],[d1,t1],[d0,t1]].map(c => proj(nx(c[0]), ny(c[1]), r.pred(c[0], rv, c[1])));
+      quads.push({ d: (q[0][2] + q[2][2])/2, pts: q, v: (r.pred(d0, rv, t0) + r.pred(d1, rv, t1))/2, wet: rv });
+    }
+  }
+  quads.sort((a, b) => a.d - b.d);
+  for (const q of quads){
+    const t = zn(q.v);
+    cx.fillStyle = q.wet ? 'rgba(26,95,180,0.10)'
+      : `rgba(${Math.round(230 - 120*t)},${Math.round(120 + 80*t)},${Math.round(60 + 20*t)},0.30)`;
+    cx.beginPath(); cx.moveTo(q.pts[0][0], q.pts[0][1]);
+    for (let k = 1; k < 4; k++) cx.lineTo(q.pts[k][0], q.pts[k][1]);
+    cx.closePath(); cx.fill();
+    cx.strokeStyle = q.wet ? 'rgba(26,95,180,.25)' : 'rgba(43,43,43,.18)'; cx.lineWidth = 0.7; cx.stroke();
+  }
+  // data points with stems to their own conditional sheet
+  const pts = [];
+  fsProj = [];
+  for (const o of r.data){
+    if (o.d > 24 && !S.frevealed) continue;
+    pts.push({ a: proj(nx(o.d), ny(o.temp), r.pred(o.d, o.rain, o.temp)),
+               b: proj(nx(o.d), ny(o.temp), o.y), o: o });
+  }
+  pts.sort((p, q) => p.a[2] - q.a[2]);
+  for (const p of pts){
+    cx.strokeStyle = 'rgba(43,43,43,.5)'; cx.lineWidth = 1.3;
+    cx.beginPath(); cx.moveTo(p.a[0], p.a[1]); cx.lineTo(p.b[0], p.b[1]); cx.stroke();
+    cx.beginPath(); cx.arc(p.b[0], p.b[1], 4.2, 0, 7);
+    if (p.o.d > 24){ cx.fillStyle = '#fff'; cx.fill(); cx.strokeStyle = p.o.rain ? '#1a5fb4' : '#8a8378'; cx.lineWidth = 1.6; cx.stroke(); }
+    else { cx.fillStyle = p.o.rain ? '#1a5fb4' : '#2b2b2b'; cx.fill(); }
+    fsProj.push({ x: p.b[0], y: p.b[1], d: p.o.d });
+    if (p.o.d === S.fsel || p.o.d === S.fhover){
+      cx.strokeStyle = p.o.d === S.fsel ? '#1a5fb4' : '#c2185b'; cx.lineWidth = 2.2;
+      cx.beginPath(); cx.arc(p.b[0], p.b[1], 9, 0, 7); cx.stroke();
+    }
+  }
+  // labels
+  cx.fillStyle = '#8a8378'; cx.font = '12px sans-serif'; cx.textAlign = 'center';
+  const axd = proj(0.5, -0.10, zLo), axt = proj(-0.12, 0.5, zLo);
+  cx.fillText('day \u2192', axd[0], axd[1]);
+  cx.fillText('temp \u00b0F \u2192', axt[0], axt[1]);
+  cx.textAlign = 'left'; cx.font = '12px sans-serif';
+  cx.fillText('height = daily sales ($) \u00b7 drag to spin \u00b7 pink floor = the future', 10, 18);
+  cx.fillStyle = '#c2185b';
+  cx.fillText(S.ffeat === 'full'
+    ? 'the sheet tilts along temp \u2014 the model can SEE it' + (r.useRain ? ' \u00b7 blue sheet = rainy days, floating ~$140 below' : '')
+    : 'the sheet is FLAT along temp \u2014 a model cannot bend along an axis it cannot see', 10, 34);
+}
+let fsProj = [];
+let fsDrag = null;
+cv.addEventListener('mousedown', e => { if (S.forecast && S.fview === 'surf'){ fsDrag = e.clientX; e.preventDefault(); } });
+window.addEventListener('mouseup', () => fsDrag = null);
+window.addEventListener('mousemove', e => {
+  if (fsDrag !== null && S.forecast && S.fview === 'surf'){ S.fyaw += (e.clientX - fsDrag)*0.01; fsDrag = e.clientX; drawSpace(); }
+});
+chip('fvChips', v => { S.fview = v;
+  if (S.forecast){ drawSpace();
+    $('hoverLine').textContent = v === 'surf'
+      ? 'drag the surface to spin \u00b7 switch Features and watch which axes the sheet can bend along'
+      : 'hover the chart to query the curve at any day \u2014 the future included'; } });
+
+/* ---------------- Inspect: per-lens deep dive ---------------- */
+const icv = $('insp'), icx = icv.getContext('2d');
+const IW = 640, IH = 216;
+icv.width = IW*DPR; icv.height = IH*DPR; icv.style.width = IW + 'px'; icv.style.height = IH + 'px';
+icx.setTransform(DPR, 0, 0, DPR, 0, 0);
+function trainMeans(){
+  const rr = ratingsNow(); let m1 = 0, m2 = 0, n = 0;
+  for (const idStr of Object.keys(rr.ratings)){ const it = S.items[+idStr]; m1 += it.x1; m2 += it.x2; n++; }
+  return n ? [m1/n, m2/n] : [0.5, 0.5];
+}
+function runPred(x1, x2){ return modelProbAt(x1, x2); }   // honors Hand-fit sliders like every other view
+function drawInspect(){
+  const box = $('inspBox');
+  if (S.stage < 1) return;
+  const rr = ratingsNow();
+  if (S.iview === 'surf'){
+    $('axRow').classList.add('hidden');
+    icv.style.display = 'block'; icv.style.cursor = 'grab';
+    drawSurface();
+    return;
+  }
+  icv.style.cursor = '';
+  $('axRow').classList.toggle('hidden', S.lens !== 'linear');
+  icv.style.display = S.lens === 'mlp' ? 'none' : 'block';
+  icx.clearRect(0, 0, IW, IH);
+  if (!S.run){ $('inspText').textContent = 'rate at least 3 items to fit a model first'; return; }
+
+  if (S.lens === 'linear'){
+    // --- text: readable coefficients (degree 1) or honest silence (degree >1)
+    const [m1, m2] = trainMeans();
+    if (S.degree === 1){
+      const s1 = runPred(1, m2) - runPred(0, m2), s2 = runPred(m1, 1) - runPred(m1, 0);
+      const unit = rr.mode === 'stars' ? '\u2605' : ' like-score';
+      const f = v => (v >= 0 ? '+' : '\u2212') + Math.abs(v).toFixed(2);
+      $('inspText').textContent =
+        `The model IS its weights: average dish \u2248 ${runPred(m1, m2).toFixed(1)}${unit} \u00b7 ${f(s1/5)}${unit} per \ud83c\udf36 \u00b7 ${f(s2/4)}${unit} per $. Readable weights are linear regression's superpower.` +
+        (rr.mode === 'binary' ? ' (0/1 labels are its FAILURE scene \u2014 for the real thing, open the Forecast scenario.)' : '');
+    } else {
+      $('inspText').textContent =
+        `degree ${S.degree} = ${C.polyTerms(S.degree).length + 1} polynomial weights \u2014 no longer readable one by one; the curve below carries the meaning now. (Still linear IN the weights.)`;
+    }
+    // --- fit view: y = rating vs one feature; curve = slice of the fitted surface
+    // domain extends BEYOND the data: fitting is the means, QUERYING the curve is the point
+    const ax = S.axis, other = ax === 0 ? m2 : m1;
+    const L = 40, Bm = 26, Wp = IW - L - 12, Hp = IH - Bm - 12;
+    const yLo = rr.mode === 'stars' ? 0.4 : -0.35, yHi = rr.mode === 'stars' ? 5.6 : 1.35;
+    const xLo = -0.3, xHi = 1.3;
+    const X = v => L + (v - xLo)/(xHi - xLo)*Wp, Y = v => 12 + (1 - (v - yLo)/(yHi - yLo))*Hp;
+    // data extent -> interpolation vs extrapolation zones
+    let dLo = 1, dHi = 0;
+    for (const idStr of Object.keys(rr.ratings)){ const it = S.items[+idStr];
+      const xv = ax === 0 ? it.x1 : it.x2; if (xv < dLo) dLo = xv; if (xv > dHi) dHi = xv; }
+    icx.fillStyle = 'rgba(194,24,91,.06)';
+    icx.fillRect(L, 12, X(dLo) - L, Hp);
+    icx.fillRect(X(dHi), 12, L + Wp - X(dHi), Hp);
+    icx.strokeStyle = '#c2185b'; icx.setLineDash([3,3]); icx.lineWidth = 1;
+    icx.beginPath(); icx.moveTo(X(dLo), 12); icx.lineTo(X(dLo), 12 + Hp);
+    icx.moveTo(X(dHi), 12); icx.lineTo(X(dHi), 12 + Hp); icx.stroke(); icx.setLineDash([]);
+    icx.fillStyle = 'rgba(194,24,91,.55)'; icx.font = '10px sans-serif'; icx.textAlign = 'center';
+    icx.fillText('extrapolation', (L + X(dLo))/2, 12 + Hp - 4);
+    icx.fillText('extrapolation', (X(dHi) + L + Wp)/2, 12 + Hp - 4);
+    icx.strokeStyle = '#c9c2b4'; icx.lineWidth = 1; icx.strokeRect(L, 12, Wp, Hp);
+    icx.fillStyle = '#8a8378'; icx.font = '11px sans-serif'; icx.textAlign = 'center';
+    icx.fillText(ax === 0 ? 'spiciness \u2192' : 'price \u2192', L + Wp/2, IH - 6);
+    icx.save(); icx.translate(12, 12 + Hp/2); icx.rotate(-Math.PI/2);
+    icx.fillText(rr.mode === 'stars' ? 'stars' : 'like (1) / dislike (0)', 0, 0); icx.restore();
+    // reference lines for binary
+    if (rr.mode === 'binary'){
+      icx.strokeStyle = '#e4ded2'; icx.setLineDash([3,3]);
+      for (const v of [0, 0.5, 1]){ icx.beginPath(); icx.moveTo(L, Y(v)); icx.lineTo(L+Wp, Y(v)); icx.stroke(); }
+      icx.setLineDash([]);
+    }
+    // slice curve, clipped to the plot (high-degree extrapolation flies off the chart — let it)
+    icx.save(); icx.beginPath(); icx.rect(L, 12, Wp, Hp); icx.clip();
+    icx.strokeStyle = '#2b2b2b'; icx.lineWidth = 2.2; icx.beginPath();
+    for (let i = 0; i <= 120; i++){
+      const v = xLo + (xHi - xLo)*i/120;
+      const pr = ax === 0 ? runPred(v, other) : runPred(other, v);
+      if (i === 0) icx.moveTo(X(v), Y(pr)); else icx.lineTo(X(v), Y(pr));
+    }
+    icx.stroke(); icx.restore();
+    // rated points + model predictions + residual drops
+    for (const idStr of Object.keys(rr.ratings)){
+      const it = S.items[+idStr], y = rr.ratings[it.id];
+      const xv = ax === 0 ? it.x1 : it.x2;
+      const yhat = runPred(it.x1, it.x2);
+      icx.strokeStyle = 'rgba(43,43,43,.45)'; icx.lineWidth = 1.4;
+      icx.beginPath(); icx.moveTo(X(xv), Y(y)); icx.lineTo(X(xv), Y(yhat)); icx.stroke();
+      icx.beginPath(); icx.arc(X(xv), Y(yhat), 3.4, 0, 7);       // hollow = prediction
+      icx.strokeStyle = '#8a8378'; icx.lineWidth = 1.4; icx.stroke();
+      // filled = truth; in binary mode shape doubles the hue: ● like vs ✕ dislike
+      if (rr.mode === 'binary' && y === 0){
+        icx.strokeStyle = '#D55E00'; icx.lineWidth = 2.2; icx.lineCap = 'round';
+        icx.beginPath(); icx.moveTo(X(xv)-4, Y(y)-4); icx.lineTo(X(xv)+4, Y(y)+4);
+        icx.moveTo(X(xv)+4, Y(y)-4); icx.lineTo(X(xv)-4, Y(y)+4); icx.stroke();
+      } else {
+        icx.beginPath(); icx.arc(X(xv), Y(y), 4.4, 0, 7);
+        icx.fillStyle = rr.mode === 'binary' ? '#009E73' : '#E69F00';
+        icx.fill(); icx.strokeStyle = '#2b2b2b'; icx.lineWidth = 1; icx.stroke();
+      }
+    }
+    icx.fillStyle = '#8a8378'; icx.font = '11px sans-serif'; icx.textAlign = 'left';
+    icx.fillText('\u25cf rating \u00b7 \u25cb prediction \u00b7 | residual \u00b7 move the mouse to QUERY the curve \u2014 that is what fitting is for', L + 4, 24);
+    // query probe: input a new x, read \u0177 off the curve (forecasting in one gesture)
+    if (S.fitProbe !== null){
+      const q = S.fitProbe;
+      const pr = ax === 0 ? runPred(q, other) : runPred(other, q);
+      const outside = q < dLo || q > dHi;
+      icx.strokeStyle = '#c2185b'; icx.lineWidth = 1.8;
+      icx.save(); icx.beginPath(); icx.rect(L, 12, Wp, Hp); icx.clip();
+      icx.beginPath(); icx.moveTo(X(q), 12 + Hp); icx.lineTo(X(q), Y(pr));
+      icx.lineTo(L, Y(pr)); icx.stroke();
+      icx.beginPath(); icx.arc(X(q), Y(pr), 5, 0, 7);
+      icx.fillStyle = '#c2185b'; icx.fill();
+      icx.restore();
+      icx.fillStyle = '#c2185b'; icx.font = 'bold 12px ui-monospace,monospace';
+      icx.textAlign = X(q) > L + Wp - 170 ? 'right' : 'left';
+      const label = `x=${q.toFixed(2)} \u2192 \u0177=${pr.toFixed(1)}${rr.mode === 'stars' ? '\u2605' : ''}${outside ? '  \u26a0 extrapolating' : ''}`;
+      icx.fillText(label, X(q) + (X(q) > L + Wp - 170 ? -10 : 10), Math.max(38, Math.min(12 + Hp - 8, Y(pr) - 8)));
+      icx.textAlign = 'left';
+    }
+  }
+  else if (S.lens === 'logistic'){
+    $('inspText').textContent =
+      'p = \u03c3(score). Score 0 is the boundary; distance from it is confidence. Every rated dish lands somewhere on this one S-curve \u2014 that is the whole model.';
+    const L = 40, Bm = 26, Wp = IW - L - 12, Hp = IH - Bm - 12;
+    const sLo = -7, sHi = 7;
+    const X = s => L + (s - sLo)/(sHi - sLo)*Wp, Y = v => 12 + (1 - v*0.92 - 0.04)*Hp;
+    icx.strokeStyle = '#c9c2b4'; icx.strokeRect(L, 12, Wp, Hp);
+    icx.strokeStyle = '#c2185b'; icx.setLineDash([5,4]);
+    icx.beginPath(); icx.moveTo(X(0), 12); icx.lineTo(X(0), 12 + Hp); icx.stroke(); icx.setLineDash([]);
+    icx.strokeStyle = '#2b2b2b'; icx.lineWidth = 2.2; icx.beginPath();
+    for (let i = 0; i <= 84; i++){
+      const s = sLo + (sHi - sLo)*i/84;
+      if (i === 0) icx.moveTo(X(s), Y(C.sigm(s))); else icx.lineTo(X(s), Y(C.sigm(s)));
+    }
+    icx.stroke();
+    for (const idStr of Object.keys(rr.ratings)){
+      const it = S.items[+idStr], y = rr.ratings[it.id];
+      let pv = Math.min(1 - 1e-9, Math.max(1e-9, runPred(it.x1, it.x2)));
+      const s = Math.max(sLo, Math.min(sHi, Math.log(pv/(1 - pv))));
+      if (y === 0){
+        icx.strokeStyle = '#D55E00'; icx.lineWidth = 2.2; icx.lineCap = 'round';
+        icx.beginPath(); icx.moveTo(X(s)-4, Y(C.sigm(s))-4); icx.lineTo(X(s)+4, Y(C.sigm(s))+4);
+        icx.moveTo(X(s)+4, Y(C.sigm(s))-4); icx.lineTo(X(s)-4, Y(C.sigm(s))+4); icx.stroke();
+      } else {
+        icx.beginPath(); icx.arc(X(s), Y(C.sigm(s)), 4.6, 0, 7);
+        icx.fillStyle = '#009E73'; icx.fill();
+        icx.strokeStyle = '#2b2b2b'; icx.lineWidth = 1; icx.stroke();
+      }
+    }
+    icx.fillStyle = '#8a8378'; icx.font = '11px sans-serif'; icx.textAlign = 'center';
+    icx.fillText('score \u2192', L + Wp/2, IH - 6);
+    icx.fillText('boundary (score 0)', X(0), 10);
+  }
+  else { // mlp
+    const h = S.hidden;
+    $('inspText').textContent = h === 0
+      ? '0 hidden units: no committee, one straight line \u2014 this IS logistic regression. Slide hidden up to hire the committee.'
+      : `The curved boundary is a weighted vote of ${h} straight lines \u2014 look at the canvas: each faint dashed blue line is one hidden unit's personal boundary (bolder = more voting weight). MLP = a committee of logistic units whose votes the output layer learned to weigh.`;
+  }
+}
+
+/* ---------------- Inspect: 3-D surface — the model as a landscape ---------------- */
+function drawSurface(){
+  icx.clearRect(0, 0, IW, IH);
+  if (!S.run){ $('inspText').textContent = 'rate at least 3 items to fit a model first'; return; }
+  const rr = ratingsNow();
+  const binary = rr.mode === 'binary';
+  const zLo = binary ? -0.25 : 0.4, zHi = binary ? 1.25 : 5.6;
+  const zn = v => (Math.max(zLo, Math.min(zHi, v)) - zLo)/(zHi - zLo);
+  const cx0 = IW*0.5, cy0 = IH*0.62, sXY = IH*1.05, hZ = IH*0.55, fore = 0.42;
+  const st = Math.sin(S.yaw), ct = Math.cos(S.yaw);
+  const proj = (x, y, z) => {
+    const rx = (x - 0.5)*ct - (y - 0.5)*st;
+    const ry = (x - 0.5)*st + (y - 0.5)*ct;
+    return [cx0 + rx*sXY, cy0 + ry*fore*sXY - zn(z)*hZ, ry];
+  };
+  // sample the model on a grid (honors Hand fit via modelProbAt)
+  const G = 22, Z = [];
+  for (let j = 0; j <= G; j++){ Z.push([]); for (let i = 0; i <= G; i++) Z[j].push(modelProbAt(i/G, j/G)); }
+  // base square (floor) for orientation
+  const corners = [[0,0],[1,0],[1,1],[0,1]].map(c => proj(c[0], c[1], zLo));
+  icx.strokeStyle = '#c9c2b4'; icx.lineWidth = 1; icx.setLineDash([3,3]);
+  icx.beginPath(); icx.moveTo(corners[0][0], corners[0][1]);
+  for (let k = 1; k <= 4; k++) icx.lineTo(corners[k%4][0], corners[k%4][1]);
+  icx.stroke(); icx.setLineDash([]);
+  // quads, painter's order: far rows first (smaller depth ry drawn first when viewer at +ry)
+  const quads = [];
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++){
+    const p00 = proj(i/G, j/G, Z[j][i]),     p10 = proj((i+1)/G, j/G, Z[j][i+1]);
+    const p11 = proj((i+1)/G, (j+1)/G, Z[j+1][i+1]), p01 = proj(i/G, (j+1)/G, Z[j+1][i]);
+    const v = (Z[j][i] + Z[j][i+1] + Z[j+1][i] + Z[j+1][i+1])/4;
+    quads.push({ d: (p00[2] + p11[2])/2, pts: [p00, p10, p11, p01], v: v });
+  }
+  quads.sort((a, b) => a.d - b.d);
+  for (const q of quads){
+    let fill;
+    if (binary){
+      const v = Math.min(1, Math.max(0, q.v));
+      fill = v >= 0.5 ? `rgba(0,158,115,${0.10 + 0.30*(v - 0.5)*2})` : `rgba(213,94,0,${0.10 + 0.30*(0.5 - v)*2})`;
+    } else {
+      const t = Math.min(1, Math.max(0, (q.v - 1)/4));
+      fill = `rgba(${Math.round(230 - 120*t)},${Math.round(120 + 80*t)},${Math.round(60 + 20*t)},0.35)`;
+    }
+    icx.fillStyle = fill;
+    icx.beginPath(); icx.moveTo(q.pts[0][0], q.pts[0][1]);
+    for (let k = 1; k < 4; k++) icx.lineTo(q.pts[k][0], q.pts[k][1]);
+    icx.closePath(); icx.fill();
+    icx.strokeStyle = 'rgba(43,43,43,.20)'; icx.lineWidth = 0.7; icx.stroke();
+  }
+  // rated points: 3-D residual stems from the surface up/down to the rating
+  const pts = [];
+  for (const idStr of Object.keys(rr.ratings)){
+    const it = S.items[+idStr], y = rr.ratings[it.id];
+    const zs = modelProbAt(it.x1, it.x2);
+    pts.push({ a: proj(it.x1, it.x2, zs), b: proj(it.x1, it.x2, y), y: y, d: proj(it.x1, it.x2, 0)[2] });
+  }
+  pts.sort((a, b) => a.d - b.d);
+  for (const p of pts){
+    icx.strokeStyle = 'rgba(43,43,43,.55)'; icx.lineWidth = 1.4;
+    icx.beginPath(); icx.moveTo(p.a[0], p.a[1]); icx.lineTo(p.b[0], p.b[1]); icx.stroke();
+    if (binary && p.y === 0){
+      icx.strokeStyle = '#D55E00'; icx.lineWidth = 2.2; icx.lineCap = 'round';
+      icx.beginPath(); icx.moveTo(p.b[0]-4, p.b[1]-4); icx.lineTo(p.b[0]+4, p.b[1]+4);
+      icx.moveTo(p.b[0]+4, p.b[1]-4); icx.lineTo(p.b[0]-4, p.b[1]+4); icx.stroke();
+    } else {
+      icx.beginPath(); icx.arc(p.b[0], p.b[1], 4.2, 0, 7);
+      icx.fillStyle = binary ? '#009E73' : '#E69F00';
+      icx.fill(); icx.strokeStyle = '#2b2b2b'; icx.lineWidth = 1; icx.stroke();
+    }
+  }
+  // axis labels on the floor
+  icx.fillStyle = '#8a8378'; icx.font = '11px sans-serif'; icx.textAlign = 'center';
+  const ax1 = proj(0.5, -0.12, zLo), ax2 = proj(-0.14, 0.5, zLo);
+  icx.fillText('spiciness \u2192', ax1[0], ax1[1]);
+  icx.fillText('price \u2192', ax2[0], ax2[1]);
+  icx.textAlign = 'left';
+  icx.fillText(binary ? 'height = p(like)' : 'height = predicted \u2605', 10, 16);
+  $('inspText').textContent = ({
+    linear: S.degree === 1
+      ? 'The model as a LANDSCAPE: degree 1 is a flat tilted plane through the ratings \u2014 the heatmap on the main canvas is this exact surface seen from straight above. Sticks = residuals, now literally vertical. Drag to spin.'
+      : `Degree ${S.degree}: the plane bends into a sheet \u2014 same surface as the heatmap, seen from the side. Drag to spin.`,
+    logistic: 'The sigmoid CLIFF: a flat 0-plain, a flat 1-plateau, and one straight cliff edge \u2014 that edge is the decision boundary you see on the main canvas. Drag to spin.',
+    mlp: `The committee's landscape: ${S.hidden} straight cliffs voted into hills and valleys \u2014 THIS is what hidden units buy you. Drag to spin.`,
+  })[S.lens] || '';
+}
+let surfDrag = null;
+icv.addEventListener('mousedown', e => { if (S.iview === 'surf'){ surfDrag = e.clientX; e.preventDefault(); } });
+window.addEventListener('mouseup', () => surfDrag = null);
+window.addEventListener('mousemove', e => {
+  if (surfDrag !== null && S.iview === 'surf'){ S.yaw += (e.clientX - surfDrag)*0.01; surfDrag = e.clientX; drawInspect(); }
+});
+chip('ivChips', v => { S.iview = v; $('ivNote').classList.toggle('hidden', v !== 'surf'); drawInspect(); });
+
+icv.addEventListener('mousemove', e => {
+  if (S.iview !== 'flat' || S.lens !== 'linear' || !S.run || S.stage < 1) return;
+  const r = icv.getBoundingClientRect();
+  const mx = (e.clientX - r.left)*(IW/r.width);
+  const L = 40, Wp = IW - L - 12, xLo = -0.3, xHi = 1.3;
+  const q = xLo + (mx - L)/Wp*(xHi - xLo);
+  S.fitProbe = (q >= xLo && q <= xHi) ? q : null;
+  drawInspect();
+});
+icv.addEventListener('mouseleave', () => { S.fitProbe = null; drawInspect(); });
+
+/* ---------------- filter bubble: cutoff + feedback-loop simulation ---------------- */
+function bubbleCutoff(rr, probAt){
+  const preds = S.items.filter(it => rr.ratings[it.id] === undefined)
+    .map(it => probAt(it.x1, it.x2)).sort((a, b) => b - a);
+  const k = Math.min(5, Math.max(1, Math.floor(preds.length/2)));   // adaptive when few remain
+  return preds.length > k ? preds[k-1] : null;
+}
+function excludedFrac(probAt, cut){
+  const G = 30; let out = 0;
+  for (let iy = 0; iy < G; iy++) for (let ix = 0; ix < G; ix++)
+    if (probAt((ix+0.5)/G, 1-(iy+0.5)/G) < cut) out++;
+  return out/(G*G);
+}
+function simCfg(ratings, mode){
+  const hp = S.lens === 'mlp' ? (S.hidden >= 12 ? HP.mlp16 : HP.mlp) : HP.logistic;
+  return { seed: S.seed, persona: 'self', selfRatings: ratings, targetMode: mode,
+           lens: S.lens, hidden: S.hidden, degree: S.degree, solver: S.solver, lr: hp.lr, epochs: hp.epochs };
+}
+$('btnSim').onclick = () => {
+  if (S.forecast) return;
+  if (S.source !== 'persona'){ toast('The simulation needs an oracle: switch Data to a Persona (their ground truth auto-rates whatever gets recommended).'); return; }
+  if (!S.run){ toast('Fit a model first.'); return; }
+  if (S.sim) return;
+  const rr0 = ratingsNow();
+  const pool = C.truthPool(S.persona, S.items, S.seed);
+  S.sim = { ratings: Object.assign({}, rr0.ratings), mode: rr0.mode, run: S.run, added: [], frac0: null };
+  S.bubble = true; $('chkBubble').checked = true;
+  const p0 = (x1, x2) => S.sim.run._model.prob(S.sim.run._st.z([x1, x2]));
+  const c0 = bubbleCutoff({ ratings: S.sim.ratings }, p0);
+  S.sim.c0 = c0;
+  S.sim.grid0 = []; S.sim.zone0 = [];
+  const G = 30;
+  for (let iy = 0; iy < G; iy++) for (let ix = 0; ix < G; ix++){
+    const v = p0((ix+0.5)/G, 1-(iy+0.5)/G);
+    S.sim.grid0.push(v); S.sim.zone0.push(c0 !== null && v < c0);
+  }
+  S.sim.served = [];
+  $('btnSim').classList.add('hidden'); $('btnSimClear').classList.remove('hidden');
+  $('simNote').style.display = 'block';
+  let round = 0;
+  (function loop(){
+    if (!S.sim) return;
+    round++;
+    const pr = (x1, x2) => S.sim.run._model.prob(S.sim.run._st.z([x1, x2]));
+    const top = S.items.filter(it => S.sim.ratings[it.id] === undefined)
+      .map(it => ({ id: it.id, p: pr(it.x1, it.x2) }))
+      .sort((a, b) => b.p - a.p).slice(0, 3);
+    const cNow = bubbleCutoff({ ratings: S.sim.ratings }, pr);
+    for (const t of top){ S.sim.ratings[t.id] = pool[t.id]; S.sim.served.push({ id: t.id, inBubble: cNow === null || t.p >= cNow }); }
+    S.sim.run = C.runConfig(simCfg(S.sim.ratings, S.sim.mode));
+    S.sim.added.push(top.map(t => t.id));
+    const n = Object.keys(S.sim.ratings).length;
+    $('simNote').textContent = `round ${round}/3: the diner rated the 3 dishes the system chose · ${n}/30 rated — watch WHERE the new ratings land`;
+    drawSpace();
+    if (round < 3){ setTimeout(loop, 900); return; }
+    // final report: where did the data come from, and did the excluded zone ever learn?
+    const pf = (x1, x2) => S.sim.run._model.prob(S.sim.run._st.z([x1, x2]));
+    const G2 = 30; let dIn = 0, nIn = 0, dOut = 0, nOut = 0, gi = 0;
+    for (let iy = 0; iy < G2; iy++) for (let ix = 0; ix < G2; ix++){
+      const dv = Math.abs(pf((ix+0.5)/G2, 1-(iy+0.5)/G2) - S.sim.grid0[gi]);
+      if (S.sim.zone0[gi]){ dIn += dv; nIn++; } else { dOut += dv; nOut++; }
+      gi++;
+    }
+    const unit = S.sim.mode === 'stars' ? '\u2605' : '';
+    const fmtd = v => (S.sim.mode === 'stars' ? v.toFixed(2) : v.toFixed(3));
+    const nServed = S.sim.served.length, nInB = S.sim.served.filter(x => x.inBubble).length;
+    let missed = 0;
+    for (const it of S.items){
+      if (S.sim.ratings[it.id] !== undefined) continue;
+      const truthLike = S.sim.mode === 'stars' ? pool[it.id] >= 4 : pool[it.id] === 1;
+      const gx = Math.min(G2-1, Math.floor(it.x1*G2)), gy = Math.min(G2-1, Math.floor((1-it.x2)*G2));
+      if (truthLike && S.sim.zone0[gy*G2 + gx]) missed++;
+    }
+    $('simNote').innerHTML = `after 3 rounds: <b>${nInB}/${nServed} new ratings came from inside the bubble</b> \u2014 the system asked, the diner answered, nobody explored.` +
+      (nIn ? ` The hatched zone received <b>0 of the ${nServed} new labels</b>: whatever f believes there stayed <b>untested</b> (its predictions drifted |\u0394\u0177| \u2248 ${fmtd(dIn/nIn)}${unit} on zero evidence).` : '') +
+      (missed > 0 ? ` <b>${missed} dish${missed > 1 ? 'es' : ''} the persona actually likes sit in that zone: unrated then, unrated now, invisible forever.</b>` : '') +
+      ` (Exploitation without exploration \u2014 fix idea: sometimes serve a dish the model is UNSURE about. That is the bandit story.)`;
+    toast('Feedback loop complete \u2014 see the verdict under Recommendations.');
+  })();
+};
+$('btnSimClear').onclick = () => { clearSim(); drawSpace(); };
+function clearSim(){
+  S.sim = null;
+  $('btnSim').classList.remove('hidden'); $('btnSimClear').classList.add('hidden');
+  $('simNote').style.display = 'none'; $('simNote').textContent = '';
+}
+$('chkBubble').onchange = () => { S.bubble = $('chkBubble').checked; drawSpace(); };
+
+/* ---------------- toast + refresh ---------------- */
+function toast(m){ const t = $('toast'); t.textContent = m; t.style.opacity = 1;
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.style.opacity = 0, 3400); }
+function refreshEnv(){
+  if (S.forecast){
+    $('envObs').textContent = 'Partially';
+    $('envDet').textContent = 'Stochastic (noisy sales)';
+    $('envDisc').textContent = 'Continuous (day → $)';
+    return;
+  }
+  $('envObs').textContent = 'Partially';
+  $('envDet').textContent = S.source === 'self' ? 'Stochastic (humans!)'
+    : S.persona === 'regular' ? 'Stochastic (rating noise)'
+    : (S.scFlips > 0 ? 'Det. rule + label flips' : 'Deterministic (taste rule)');
+  $('envDisc').textContent = ratingsNow().mode === 'stars' ? 'Cont. features · stars' : 'Cont. features · binary';
+}
+function refreshAll(){ buildMenu(); renderTable(); refreshMetrics(); refreshRec(); drawSpace(); drawLoss(); refreshSlots(); drawInspect(); refreshEnv(); updateSolverUI(); refreshSolNote(); }
+chip('axChips', v => { S.axis = +v; drawInspect(); });
+
+/* ---------------- boot ---------------- */
+const q0 = new URLSearchParams(location.hash.slice(1));
+let GMODE = q0.get('md') === 'g' ? 'g' : (location.hash.length > 1 ? 'r' : null);
+applyHashCfg();
+$('seedIn').value = S.seed;
+S.items = C.genItems(S.seed);
+coldOpenId = C.pickIndices(S.seed, 1)[0];
+setChip('srcChips', S.source); setChip('tgtChips', S.target); setChip('lensChips', S.lens);
+$('personaSel').classList.toggle('hidden', S.source !== 'persona');
+$('personaSel').value = S.persona;
+$('hidIn').value = S.hidden; $('hidVal').textContent = S.hidden;
+$('hidWrap').classList.toggle('hidden', S.lens !== 'mlp');
+$('degIn').value = S.degree; $('degVal').textContent = S.degree;
+setChip('solChips', S.solver);
+setChip('ffChips', S.ffeat);
+$('degWrap').classList.toggle('hidden', S.lens === 'mlp');
+if (Object.keys(S.self).length >= 3) S.stage = Math.max(S.stage, 1);
+if (S.source === 'persona') S.stage = Math.max(S.stage, 2);
+applyStages();
+$('stageHint').textContent = 'Cold open: taste the highlighted dish first \u2014 rate 3 items and the first fit appears.';
+if (GMODE === 'g' || GMODE === null){
+  // grades module (second script) takes over: selector or grades boot
+  $('home').classList.add('hidden');
+  document.querySelector('main').classList.add('hidden');
+  $('roomNav').classList.add('hidden');
+  $('btnHome').classList.add('hidden');
+}
+else if (S._hashTrack){ enterTrack(S._hashTrack); }
+else showHome();
+if (GMODE === 'r' && S._hashScenario){ S.bet = null; runScenario(S._hashScenario); }
+setInterval(() => { if (!S.forecast && S.track && S.source === 'self' && Object.keys(S.self).length === 0) drawSpace(); }, 240);
+</script>
+<!--GRADESJS-->
+</body>
+</html>

@@ -1,0 +1,18 @@
+# ─────────────────────────────────────────────────────────────
+# This repository is PUBLIC, and GitHub Pages serves every file
+# it contains — a subdirectory is not a hiding place.
+#
+# The gate that actually decides what may be published is
+# PUBLIC_MANIFEST.txt, enforced by maintainer tooling kept
+# outside this repository. It runs before every push.
+#
+# NOTE: git has no trailing comments — every '#' starts its own
+# line, or it becomes part of the pattern.
+# ─────────────────────────────────────────────────────────────
+
+.DS_Store
+__pycache__/
+
+# Held back until the custom domain's DNS and certificate are
+# live; see the deployment runbook.
+CNAME

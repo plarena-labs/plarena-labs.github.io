@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Arena · Plarena — playable adversarial search</title>
+<style>
+  :root{
+    --paper:#faf7ef; --ink:#2b2b2b; --muted:#8a8378; --line:#c9c2b4;
+    --accent:#c0392b; --blue:#1a5fb4; --green:#2e7d32; --magenta:#c2185b;
+    --maxbg:#fdf6e3; --minbg:#eef4fb; --prune:#b9b2a4;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Comic Sans MS","Segoe Print","Bradley Hand",cursive,sans-serif;
+    font-size:14px;
+  }
+  header{display:flex; align-items:baseline; gap:14px; padding:14px 20px 4px;}
+  h1{font-size:30px; margin:0; transform:rotate(-.8deg);}
+  h1 span.g2{color:var(--accent);}
+  h1 span.lab{font-size:13px; color:var(--muted); font-weight:normal; margin-left:8px;}
+  main{display:flex; gap:16px; padding:10px 20px 6px; align-items:flex-start; flex-wrap:wrap;}
+  .col-left{flex:0 0 340px; display:flex; flex-direction:column; gap:12px;}
+  .col-right{flex:1 1 520px; min-width:420px; display:flex; flex-direction:column; gap:12px;}
+  .sketch-box{
+    background:#fffdf6; border:2.5px solid var(--ink); padding:10px 12px;
+    border-radius:12px 205px 12px 185px/205px 12px 185px 12px;
+    box-shadow:3px 4px 0 rgba(43,43,43,.10);
+  }
+  .boxtitle{font-weight:bold; font-size:15px; margin-bottom:6px;}
+  .note{color:var(--muted); font-size:12px;}
+  .row{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:5px 0;}
+  select,input[type=number],input[type=text]{
+    font-family:inherit; font-size:13px; background:var(--paper);
+    border:2px solid var(--ink); border-radius:8px 105px 8px 95px/105px 8px 95px 8px; padding:2px 6px;
+  }
+  button{
+    font-family:inherit; font-size:13px; cursor:pointer; background:var(--ink); color:var(--paper);
+    border:2px solid var(--ink); border-radius:10px 155px 10px 125px/155px 10px 125px 10px; padding:4px 12px;
+  }
+  button:hover{background:var(--accent); border-color:var(--accent);}
+  button.ghost{background:transparent; color:var(--ink);}
+  button.ghost:hover{color:var(--accent); border-color:var(--accent); background:transparent;}
+  button:disabled{opacity:.4; cursor:default;}
+  .chips{display:inline-flex; gap:0;}
+  .chips button{border-radius:0; border-right-width:0; background:transparent; color:var(--ink); padding:3px 10px;}
+  .chips button:first-child{border-radius:10px 0 0 10px;}
+  .chips button:last-child{border-radius:0 10px 10px 0; border-right-width:2px;}
+  .chips button.on{background:var(--ink); color:var(--paper);}
+  .chips button.on:hover{background:var(--ink);}
+  #board{display:block; margin:2px auto; cursor:pointer;}
+  #statusLine{text-align:center; font-size:14px; min-height:20px; margin-top:4px;}
+  #predLine{text-align:center; font-size:12.5px; color:var(--muted); min-height:16px;}
+  table.metrics{width:100%; border-collapse:collapse; font-size:13px;}
+  table.metrics td{padding:2px 4px; border-bottom:1.5px dashed var(--line);}
+  table.metrics td:last-child{text-align:right; font-weight:bold;}
+  #abPanel .abrow{display:flex; gap:10px; align-items:center; margin:4px 0;}
+  .abcell{border:2px solid var(--ink); border-radius:8px; padding:2px 10px; min-width:64px; text-align:center;}
+  .abcell b{font-size:16px;}
+  .abcell .lbl{font-size:11px; color:var(--muted);}
+  #pruneMsg{font-size:12.5px; color:var(--magenta); min-height:32px;}
+  #treeWrap{overflow:auto; max-height:560px; border:1.5px dashed var(--line); background:#fffef9;}
+  #treeHint{font-size:12px; color:var(--muted); margin-top:4px;}
+  footer{padding:8px 20px 16px; color:var(--muted); font-size:12px;}
+  #toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+    background:var(--ink); color:var(--paper); padding:8px 16px; border-radius:10px;
+    opacity:0; transition:opacity .25s; pointer-events:none; font-size:13px; max-width:80vw;
+  }
+  .legend{font-size:12px; color:var(--muted); display:flex; gap:14px; flex-wrap:wrap; margin-top:4px;}
+  .legend span{white-space:nowrap;}
+  .sw{display:inline-block; width:10px; height:10px; border-radius:3px; vertical-align:-1px; margin-right:3px;}
+  .agentChip{display:inline-block; font-size:10.5px; font-weight:bold; letter-spacing:.5px;
+    color:var(--accent); border:1.5px dashed var(--accent); border-radius:6px;
+    padding:0 6px; margin-right:6px; vertical-align:2px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Game<span class="g2">Arena</span><span class="lab">a PLARENA lab</span></h1>
+  <span class="note">adversarial search, playable — minimax &amp; alpha-beta on tic-tac-toe</span>
+</header>
+
+<main>
+  <div class="col-left">
+    <div class="sketch-box">
+      <div class="boxtitle"><span class="agentChip">PERCEPTS ⇄ ACTIONS</span>World <span class="note">— tic-tac-toe · X is MAX (+1), O is MIN (−1) · the agent reads the board here, and its move lands here</span></div>
+      <canvas id="board" width="270" height="270"></canvas>
+      <div id="statusLine"></div>
+      <div id="predLine"></div>
+    </div>
+
+    <div class="sketch-box">
+      <div class="boxtitle">Environment <span class="note">— this game's properties, live</span></div>
+      <table class="metrics">
+        <tr><td>observable</td><td id="envObs">Fully</td></tr>
+        <tr><td>deterministic</td><td id="envDet">Deterministic</td></tr>
+        <tr><td>agents</td><td id="envAg">Two — adversarial</td></tr>
+        <tr><td>episodic / sequential</td><td>Sequential</td></tr>
+        <tr><td>static / dynamic</td><td>Static</td></tr>
+        <tr><td>discrete / continuous</td><td>Discrete</td></tr>
+      </table>
+      <div class="note" style="margin-top:6px;">Flip Kriegspiel or the opponent policy and watch the top rows change — every changed row demands a different algorithm. (Search Arena flips the <i>agents</i> row back.)</div>
+    </div>
+
+    <div class="sketch-box">
+      <div class="boxtitle">Controls</div>
+      <div class="row">
+        Mode
+        <span class="chips" id="modeChips">
+          <button data-v="play" class="on">Play vs AI</button><button data-v="watch">Watch AI vs AI</button>
+        </span>
+        <span id="sideWrap">You play
+          <span class="chips" id="sideChips">
+            <button data-v="X" class="on">X</button><button data-v="O">O</button>
+          </span>
+        </span>
+      </div>
+      <div class="row">
+        Algorithm
+        <span class="chips" id="algoChips">
+          <button data-v="mm">Minimax</button><button data-v="ab" class="on">Alpha-Beta</button>
+        </span>
+        Ordering
+        <span class="chips" id="ordChips">
+          <button data-v="best" class="on">best</button><button data-v="worst">worst</button><button data-v="random">random</button>
+        </span>
+        <input type="number" id="seedIn" value="42" min="0" max="99999" style="width:64px;" title="seed — makes random ordering and stochastic opponents reproducible">
+      </div>
+      <div class="row">
+        Opponent
+        <span class="chips" id="oppChips">
+          <button data-v="optimal" class="on">optimal</button><button data-v="eps">&epsilon;-random</button><button data-v="random">random</button>
+        </span>
+        <label id="krWrap"><input type="checkbox" id="chkKr"> Kriegspiel (blind)</label>
+      </div>
+      <div class="row">
+        <button id="btnGo">Run / resume</button>
+        <button id="btnStep" class="ghost">Step</button>
+        <button id="btnPause" class="ghost">Pause</button>
+        <button id="btnReset" class="ghost">New game</button>
+        Speed <input type="range" id="speed" min="0" max="100" value="55" style="width:90px;">
+      </div>
+      <div class="row">
+        <label><input type="checkbox" id="chkShow"> Show AI analysis while playing</label>
+      </div>
+      <div class="row" id="aiHelpRow">
+        <button id="btnHint" class="ghost">AI: play this move for me</button>
+        <button id="btnTake" class="ghost">AI: take over my side</button>
+      </div>
+      <div class="row">
+        <button id="btnShare" class="ghost">Share link</button>
+        <button id="btnPng" class="ghost">Tree PNG</button>
+        <button id="btnExpand" class="ghost">Expand full subtree</button>
+      </div>
+    </div>
+
+    <div class="sketch-box">
+      <div class="boxtitle"><span class="agentChip">AGENT FUNCTION</span>My agent <span class="note">— f: percept → move, as JavaScript you write</span></div>
+      <div class="note" style="margin-bottom:4px;">Define <b>agent(percept)</b> &rarr; a cell index 0&ndash;8. Your agent plays the side selected under &ldquo;You play&rdquo;.</div>
+      <textarea id="myCode" rows="8" spellcheck="false" style="width:100%; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; background:#fffef9; border:1.5px dashed var(--line); border-radius:6px; padding:6px;">function agent(percept){
+  // percept.board: array of 9 ('X' | 'O' | null)
+  // percept.you: 'X' or 'O'   percept.legalMoves: empty cell indices
+  // Return one legal move. This sample: center if free, else first legal. Beat it!
+  if (percept.legalMoves.includes(4)) return 4;
+  return percept.legalMoves[0];
+}</textarea>
+      <div class="row">
+        <button id="btnMyPlay">My agent vs optimal</button>
+        <button id="btnMyTest" class="ghost">Test vs random &times;20</button>
+      </div>
+      <div id="codeErr" style="display:none; color:#fff; background:var(--accent); padding:4px 8px; border-radius:8px; font-size:12.5px; margin-top:4px;"></div>
+      <div class="note" id="myOut" style="margin-top:4px;"></div>
+      <div class="note" style="margin-top:4px;">Rubric a perfect agent meets: never loses vs random &times;20, and draws vs optimal.</div>
+    </div>
+
+    <div class="sketch-box">
+      <div class="boxtitle">Metrics <span class="note">— last analysis</span></div>
+      <table class="metrics">
+        <tr><td>nodes evaluated</td><td id="mEval">—</td></tr>
+        <tr><td>terminal nodes</td><td id="mLeaf">—</td></tr>
+        <tr><td>prune events</td><td id="mPrune">—</td></tr>
+        <tr><td>root value (X view)</td><td id="mVal">—</td></tr>
+      </table>
+      <div class="note" id="mHist" style="margin-top:6px;"></div>
+      <div class="note" style="margin-top:6px;">Try: same position, Minimax vs Alpha-Beta; then best vs worst ordering. Watch <i>nodes evaluated</i>.</div>
+    </div>
+  </div>
+
+  <div class="col-right">
+    <div class="sketch-box" id="abPanel">
+      <div class="boxtitle"><span class="agentChip">AGENT FUNCTION</span>Alpha-Beta window <span class="note">— at the node being visited</span></div>
+      <div class="abrow">
+        <canvas id="curNode" width="46" height="46"></canvas>
+        <div class="abcell"><div class="lbl">player</div><b id="abPlayer">—</b></div>
+        <div class="abcell"><div class="lbl">&alpha;</div><b id="abA">—</b></div>
+        <div class="abcell"><div class="lbl">&beta;</div><b id="abB">—</b></div>
+        <div class="abcell"><div class="lbl">best so far</div><b id="abBest">—</b></div>
+        <div class="abcell"><div class="lbl">best move</div><b id="abMove">—</b></div>
+      </div>
+      <div id="pruneMsg"></div>
+    </div>
+
+    <div class="sketch-box">
+      <div class="boxtitle"><span class="agentChip">AGENT FUNCTION</span>Game tree <span class="note">— f thinks here: root = current position · values are X-view (+1 X wins · 0 draw · −1 O wins)</span></div>
+      <div class="row">
+        <span class="note">Game space:</span> depth
+        <span class="chips" id="depthChips">
+          <button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button>
+        </span>
+        <button id="btnSpace" class="ghost">Draw game space</button>
+        <span class="note">— plain enumeration, no search: how big does it get?</span>
+      </div>
+      <div id="treeWrap"><canvas id="tree" width="900" height="300"></canvas></div>
+      <div id="treeHint"></div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--maxbg);border:1.5px solid var(--ink);"></span>MAX level (X, ▲ takes max)</span>
+        <span><span class="sw" style="background:var(--minbg);border:1.5px solid var(--ink);"></span>MIN level (O, ▽ takes min)</span>
+        <span><span class="sw" style="background:var(--magenta);"></span>being visited</span>
+        <span><span class="sw" style="background:var(--green);"></span>best move</span>
+        <span><span class="sw" style="background:var(--prune);"></span>pruned (✂ never evaluated)</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>Game Arena · a Plarena lab · ludendo discimus — rendered 100% programmatically (rough.js / canvas), zero art assets. Companion app: Search Arena.</footer>
+<div id="toast"></div>
+
+<!--ROUGHJS-->
+<script>
+"use strict";
+/* ============================================================
+   Game Arena v0 — tic-tac-toe · minimax / alpha-beta
+   Part of the Plarena suite. UI language: English only.
+   ============================================================ */
+
+const $ = id => document.getElementById(id);
+const LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+/* ---------- rules ---------- */
+function winnerOf(b){
+  for(const [a,c,d] of LINES) if(b[a] && b[a]===b[c] && b[a]===b[d]) return b[a];
+  for(let i=0;i<9;i++) if(!b[i]) return null;
+  return 'draw';
+}
+function utility(w){ return w==='X' ? 1 : (w==='O' ? -1 : 0); }
+function toMove(b){ let n=0; for(let i=0;i<9;i++) if(b[i]) n++; return n%2===0 ? 'X' : 'O'; }
+function keyOf(b){ let s=''; for(let i=0;i<9;i++) s += b[i]||'.'; return s; }
+function boardFrom(s){ return [...s].map(c => c==='.' ? null : c); }
+
+/* ---------- exact minimax with memo (ground truth; also used for move ordering) ---------- */
+const MEMO = new Map();
+function exactValue(b){
+  const k = keyOf(b);
+  if(MEMO.has(k)) return MEMO.get(k);
+  const w = winnerOf(b);
+  let v;
+  if(w !== null){ v = utility(w); }
+  else{
+    const p = toMove(b);
+    v = (p==='X') ? -2 : 2;
+    for(let i=0;i<9;i++) if(!b[i]){
+      b[i]=p; const c = exactValue(b); b[i]=null;
+      v = (p==='X') ? Math.max(v,c) : Math.min(v,c);
+    }
+  }
+  MEMO.set(k,v); return v;
+}
+
+/* ---------- seeded RNG (determinism for random ordering) ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* ---------- analysis: event-emitting search (NO memo — the real tree) ---------- */
+// opts: {ab:boolean, ordering:'best'|'worst'|'random', seed:int, record:boolean, recDepth:int}
+function analyze(rootBoard, opts){
+  const ev = [];
+  let visits=0, leaves=0, prunes=0;
+  const rng = mulberry32((opts.seed|0)+1);
+  const rec = opts.record !== false;
+  const recDepth = (opts.recDepth==null) ? 99 : opts.recDepth;
+
+  function orderedMoves(b, p){
+    const ms=[]; for(let i=0;i<9;i++) if(!b[i]) ms.push(i);
+    if(opts.ordering==='random'){
+      for(let i=ms.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [ms[i],ms[j]]=[ms[j],ms[i]]; }
+      return ms;
+    }
+    const scored = ms.map(i=>{ b[i]=p; const v=exactValue(b); b[i]=null; return {i,v}; });
+    scored.sort((x,y)=> (p==='X') ? (y.v-x.v) : (x.v-y.v));   // best-first for the mover
+    if(opts.ordering==='worst') scored.reverse();
+    return scored.map(s=>s.i);
+  }
+
+  function walk(b, alpha, beta, path){
+    visits++;
+    const id = path.length ? path.join('') : 'r';
+    const depth = path.length;
+    const on = rec && depth<=recDepth;
+    if(on) ev.push({t:'visit', id, depth, key:keyOf(b), player:toMove(b), alpha, beta});
+    const w = winnerOf(b);
+    if(w !== null){
+      leaves++;
+      const v = utility(w);
+      if(on) ev.push({t:'leaf', id, v});
+      return v;
+    }
+    const p = toMove(b);
+    let best = (p==='X') ? -Infinity : Infinity;
+    let bestMove = -1;
+    const moves = orderedMoves(b, p);
+    for(let mi=0; mi<moves.length; mi++){
+      const m = moves[mi];
+      b[m]=p;
+      const v = walk(b, alpha, beta, path.concat(m));
+      b[m]=null;
+      if(p==='X'){ if(v>best){best=v; bestMove=m;} alpha=Math.max(alpha,best); }
+      else       { if(v<best){best=v; bestMove=m;} beta =Math.min(beta ,best); }
+      if(on) ev.push({t:'update', id, best, bestMove, alpha, beta});
+      if(opts.ab && alpha>=beta && mi<moves.length-1){
+        prunes++;
+        const cut = moves.slice(mi+1);
+        if(on) ev.push({t:'prune', id, cut, alpha, beta, best});
+        break;
+      }
+    }
+    if(on) ev.push({t:'backup', id, v:best, bestMove});
+    return best;
+  }
+
+  const b = rootBoard.slice();
+  const rootVal = walk(b, -Infinity, Infinity, []);
+  // best move at root, recomputed from ordering walk (first backup of root carries it)
+  let rootBest = -1;
+  for(let i=ev.length-1;i>=0;i--) if(ev[i].t==='backup' && ev[i].id==='r'){ rootBest = ev[i].bestMove; break; }
+  if(rootBest<0){ // events off — recompute quickly via exact values
+    const p = toMove(rootBoard); let bv = (p==='X')?-2:2;
+    for(let i=0;i<9;i++) if(!rootBoard[i]){
+      const c=rootBoard.slice(); c[i]=p; const v=exactValue(c);
+      if((p==='X'&&v>bv)||(p==='O'&&v<bv)){ bv=v; rootBest=i; }
+    }
+  }
+  return {ev, rootVal, rootBest, visits, leaves, prunes};
+}
+
+/* ---------- tree model built from events ---------- */
+function buildTree(events){
+  const nodes = new Map(); // id -> node
+  for(const e of events){
+    if(e.t==='visit'){
+      const id=e.id;
+      const parent = id==='r' ? null : (id.length===1 ? 'r' : id.slice(0,-1));
+      const n = {id, parent, depth:e.depth, key:e.key, player:e.player, kids:[], val:null, leaf:false, bestMove:-1, cut:[], order:nodes.size};
+      nodes.set(id,n);
+      if(parent!==null && nodes.has(parent)) nodes.get(parent).kids.push(id);
+    }else if(e.t==='leaf'){ const n=nodes.get(e.id); if(n){ n.leaf=true; n.val=e.v; } }
+    else if(e.t==='backup'){ const n=nodes.get(e.id); if(n){ n.val=e.v; n.bestMove=e.bestMove; } }
+    else if(e.t==='prune'){ const n=nodes.get(e.id); if(n){ n.cut=e.cut.slice(); } }
+  }
+  return nodes;
+}
+
+/* ---------- layout (tidy tree; leaf-count based x) ---------- */
+const GLYPH=30, LEAFW=42, LEVELH=78;
+function layoutTree(nodes){
+  if(!nodes.has('r')) return {w:100,h:100};
+  function width(id){
+    const n=nodes.get(id);
+    const parts=[];
+    for(const k of n.kids) parts.push(width(k));
+    n.cutW = n.cut.length ? Math.max(1, Math.ceil(n.cut.length/2)) * 0.55 : 0;
+    n.w = Math.max(1, parts.reduce((a,b)=>a+b,0) + n.cutW);
+    return n.w;
+  }
+  width('r');
+  let maxDepth=0;
+  function place(id, x0){
+    const n=nodes.get(id);
+    n.x = x0 + n.w/2; n.y = 0.55 + n.depth;
+    maxDepth=Math.max(maxDepth,n.depth);
+    let x=x0;
+    for(const k of n.kids){ place(k,x); x+=nodes.get(k).w; }
+    n.cutX = x; // pruned stubs start here
+  }
+  place('r',0);
+  return {w:nodes.get('r').w*LEAFW+40, h:(maxDepth+1.35)*LEVELH};
+}
+
+/* ---------- rendering ---------- */
+const boardCv=$('board'), boardCx=boardCv.getContext('2d');
+const treeCv=$('tree'), treeCx=treeCv.getContext('2d');
+const curCv=$('curNode'), curCx=curCv.getContext('2d');
+let rcBoard=null;
+const CSS = getComputedStyle(document.documentElement);
+const C = n => CSS.getPropertyValue(n).trim();
+
+function jitter(seed){ const r=mulberry32(seed*7919+13); return (amt)=> (r()-0.5)*2*amt; }
+
+function drawGlyph(ctx, key, x, y, s, opts){
+  // s = glyph size; draws 3x3 board with marks; opts: {bg, dim, ring}
+  const o = opts||{};
+  ctx.save();
+  ctx.translate(x-s/2, y-s/2);
+  const j = jitter([...key].reduce((a,c)=>a*3+c.charCodeAt(0),1)|0);
+  ctx.fillStyle = o.bg || '#fff';
+  ctx.globalAlpha = o.dim ? .45 : 1;
+  ctx.fillRect(-2,-2,s+4,s+4);
+  ctx.strokeStyle = o.ring || C('--ink');
+  ctx.lineWidth = o.ringW || 1.4;
+  ctx.strokeRect(-2+j(.6),-2+j(.6),s+4,s+4);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = C('--line');
+  const c=s/3;
+  for(let i=1;i<3;i++){
+    ctx.beginPath(); ctx.moveTo(i*c, 0); ctx.lineTo(i*c+j(.7), s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i*c); ctx.lineTo(s, i*c+j(.7)); ctx.stroke();
+  }
+  for(let i=0;i<9;i++){
+    const ch=key[i]; if(ch==='.') continue;
+    const cx=(i%3)*c+c/2, cy=Math.floor(i/3)*c+c/2, r=c*0.30;
+    ctx.lineWidth=1.6;
+    if(ch==='X'){
+      ctx.strokeStyle=C('--accent');
+      ctx.beginPath(); ctx.moveTo(cx-r,cy-r); ctx.lineTo(cx+r+j(.5),cy+r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+r,cy-r); ctx.lineTo(cx-r+j(.5),cy+r); ctx.stroke();
+    }else{
+      ctx.strokeStyle=C('--blue');
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawBoard(){
+  const s=270, c=s/3;
+  boardCx.clearRect(0,0,s,s);
+  if(!rcBoard) rcBoard = rough.canvas(boardCv);
+  const seedR = 7;
+  for(let i=1;i<3;i++){
+    rcBoard.line(i*c, 8, i*c, s-8, {stroke:C('--ink'), strokeWidth:2.2, roughness:1.6, seed:seedR+i});
+    rcBoard.line(8, i*c, s-8, i*c, {stroke:C('--ink'), strokeWidth:2.2, roughness:1.6, seed:seedR+i+4});
+  }
+  const hideOpp = G.kr && G.mode==='play' && !winnerOf(G.board);
+  for(let i=0;i<9;i++){
+    const v=G.board[i]; if(!v) continue;
+    const cx=(i%3)*c+c/2, cy=Math.floor(i/3)*c+c/2, r=c*0.28;
+    if(hideOpp && v!==G.side && !G.revealed.has(i)){
+      rcBoard.rectangle(cx-c*0.33, cy-c*0.33, c*0.66, c*0.66,
+        {stroke:C('--muted'), fill:'rgba(138,131,120,.15)', fillStyle:'solid', strokeWidth:1.6, roughness:1.8, seed:i*13+5});
+      continue;
+    }
+    if(v==='X'){
+      rcBoard.line(cx-r,cy-r,cx+r,cy+r,{stroke:C('--accent'),strokeWidth:3,roughness:1.7,seed:i*13+1});
+      rcBoard.line(cx+r,cy-r,cx-r,cy+r,{stroke:C('--accent'),strokeWidth:3,roughness:1.7,seed:i*13+2});
+    }else{
+      rcBoard.circle(cx,cy,r*2,{stroke:C('--blue'),strokeWidth:3,roughness:1.5,seed:i*13+3});
+    }
+  }
+  const w=winnerOf(G.board);
+  if(w==='X'||w==='O'){
+    for(const [a,b2,d] of LINES) if(G.board[a]===w&&G.board[b2]===w&&G.board[d]===w){
+      const p1=[(a%3)*c+c/2, Math.floor(a/3)*c+c/2], p2=[(d%3)*c+c/2, Math.floor(d/3)*c+c/2];
+      rcBoard.line(p1[0],p1[1],p2[0],p2[1],{stroke:C('--green'),strokeWidth:4,roughness:2,seed:99});
+    }
+  }
+}
+
+const TREE_CAP_W = 4000, TREE_CAP_NODES_ERR = 20000;
+function renderTree(upTo){
+  // draws tree from G.nodes; only nodes whose 'visit' order <= upTo (or all if upTo<0)
+  if(!G.nodes || !G.nodes.has('r')){ treeCx.clearRect(0,0,treeCv.width,treeCv.height); return; }
+  const dim = layoutTree(G.nodes);
+  let scale = 1;
+  if(dim.w > TREE_CAP_W) scale = TREE_CAP_W/dim.w;
+  treeCv.width = Math.ceil(dim.w*scale); treeCv.height=Math.ceil(dim.h*scale);
+  const ctx=treeCx;
+  ctx.setTransform(scale,0,0,scale,0,0);
+  ctx.clearRect(0,0,dim.w,dim.h);
+  const px = n => n.x*LEAFW+20, py = n => n.y*LEVELH;
+  // edges first
+  ctx.lineWidth=1.3;
+  for(const n of G.nodes.values()){
+    if(upTo>=0 && n.order>upTo) continue;
+    if(n.parent===null) continue;
+    const p=G.nodes.get(n.parent);
+    ctx.strokeStyle = C('--line');
+    ctx.beginPath(); ctx.moveTo(px(p),py(p)+GLYPH/2+12); ctx.lineTo(px(n),py(n)-GLYPH/2-4); ctx.stroke();
+  }
+  // best-move edges on top (green), only where backup done
+  ctx.lineWidth=2.4;
+  for(const n of G.nodes.values()){
+    if(upTo>=0 && n.order>upTo) continue;
+    if(n.bestMove<0) continue;
+    const cid = (n.id==='r'?'':n.id)+n.bestMove;
+    const k=G.nodes.get(cid); if(!k) continue;
+    if(upTo>=0 && k.order>upTo) continue;
+    ctx.strokeStyle=C('--green');
+    ctx.beginPath(); ctx.moveTo(px(n),py(n)+GLYPH/2+12); ctx.lineTo(px(k),py(k)-GLYPH/2-4); ctx.stroke();
+  }
+  // nodes
+  ctx.textAlign='center';
+  for(const n of G.nodes.values()){
+    if(upTo>=0 && n.order>upTo) continue;
+    const x=px(n), y=py(n);
+    const bg = n.player==='X' ? C('--maxbg') : C('--minbg');
+    const cur = (G.curId===n.id && upTo>=0);
+    drawGlyph(ctx, n.key, x, y, GLYPH, {bg, ring: cur?C('--magenta'):C('--ink'), ringW: cur?2.6:1.4});
+    // player marker
+    ctx.fillStyle=C('--muted'); ctx.font='9px sans-serif';
+    ctx.fillText(n.player==='X'?'▲':'▽', x-GLYPH/2-7, y-GLYPH/2+4);
+    // value
+    if(n.val!==null){
+      ctx.font='bold 11px sans-serif';
+      ctx.fillStyle = n.val>0?C('--accent'):(n.val<0?C('--blue'):C('--muted'));
+      ctx.fillText(n.val>0?'+1':(n.val<0?'−1':'0'), x, y+GLYPH/2+11);
+    }
+    // pruned stubs
+    if(n.cut.length){
+      let sx = n.cutX*LEAFW+20+8, sy=y+LEVELH-GLYPH/2;
+      ctx.font='11px sans-serif';
+      ctx.fillStyle=C('--magenta');
+      ctx.fillText('✂', sx-9, sy+4);
+      for(let i=0;i<n.cut.length;i++){
+        const gx=sx+6+(i%2)*16, gy=sy+Math.floor(i/2)*16-4;
+        ctx.strokeStyle=C('--prune'); ctx.lineWidth=1.2;
+        ctx.strokeRect(gx-5,gy-5,10,10);
+        ctx.beginPath(); ctx.moveTo(gx-3,gy-3); ctx.lineTo(gx+3,gy+3); ctx.moveTo(gx+3,gy-3); ctx.lineTo(gx-3,gy+3); ctx.stroke();
+      }
+      ctx.lineWidth=1.3;
+      ctx.strokeStyle=C('--prune');
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(x,y+GLYPH/2+12); ctx.lineTo(sx+8,sy-8); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  ctx.setTransform(1,0,0,1,0,0);
+}
+
+/* ---------- α/β panel ---------- */
+function fmtV(v){ if(v===Infinity) return '+∞'; if(v===-Infinity) return '−∞'; return v>0?'+1':(v<0?'−1':'0'); }
+function setPanel(e){
+  if(!e){ for(const id of ['abPlayer','abA','abB','abBest','abMove']) $(id).textContent='—';
+    curCx.clearRect(0,0,46,46); return; }
+  const n = G.nodes && G.nodes.get(e.id);
+  if(n){ curCx.clearRect(0,0,46,46); drawGlyph(curCx, n.key, 23, 23, 38, {bg:'#fff'}); }
+  if(e.t==='visit'){
+    $('abPlayer').textContent = e.player + (e.player==='X'?' ▲':' ▽');
+    $('abA').textContent = fmtV(e.alpha); $('abB').textContent = fmtV(e.beta);
+    $('abBest').textContent='—'; $('abMove').textContent='—';
+  }else if(e.t==='update'){
+    $('abA').textContent = fmtV(e.alpha); $('abB').textContent = fmtV(e.beta);
+    $('abBest').textContent = fmtV(e.best); $('abMove').textContent = 'cell '+e.bestMove;
+  }else if(e.t==='backup'){
+    $('abBest').textContent = fmtV(e.v); $('abMove').textContent = 'cell '+e.bestMove;
+  }
+  if(e.t==='prune'){
+    $('pruneMsg').textContent = `PRUNED ${e.cut.length} sibling${e.cut.length>1?'s':''}: α ${fmtV(e.alpha)} ≥ β ${fmtV(e.beta)} — the ${G.nodes.get(e.id).player==='X'?'MIN parent':'MAX parent'} would never allow this branch. Skipped without evaluating.`;
+  }else if(e.t==='leaf'){
+    $('pruneMsg').textContent = `Terminal: utility ${fmtV(e.v)} (X view).`;
+  }else if(e.t==='visit' && G.playing){
+    $('pruneMsg').textContent='';
+  }
+}
+
+/* ---------- app state & playback ---------- */
+const G = {
+  board: Array(9).fill(null),
+  mode:'play', side:'X', algo:'ab', ordering:'best', seed:42,
+  opp:'optimal', kr:false, revealed:new Set(), oppRng:null,
+  showPlay:false, expandAll:false,
+  analysis:null, nodes:null, evIdx:-1, curId:null,
+  playing:false, timer:null, watchRunning:false,
+  histLines:[],
+};
+
+function recDepthFor(board){
+  // adaptive recording/display depth: default cap 4 levels (Q1), node budget keeps empty board sane
+  const empties = board.filter(x=>!x).length;
+  let d = G.expandAll ? 9 : 4;
+  // estimate nodes = product of branching; shrink d until estimate <= budget
+  const budget = G.expandAll ? 2500 : 600;
+  function est(dd){ let t=1,c=1; for(let i=0;i<dd;i++){ c*= Math.max(1,empties-i); t+=c; if(t>1e7)break; } return t; }
+  while(d>1 && est(d)>budget) d--;
+  return d;
+}
+
+function startAnalysis(animate){
+  const rd = recDepthFor(G.board);
+  G.analysis = analyze(G.board, {ab:G.algo==='ab', ordering:G.ordering, seed:G.seed, record:true, recDepth:rd});
+  G.nodes = buildTree(G.analysis.ev);
+  G.evIdx = -1; G.curId=null; G.maxOrder=-1;
+  $('mEval').textContent = G.analysis.visits.toLocaleString();
+  $('mLeaf').textContent = G.analysis.leaves.toLocaleString();
+  $('mPrune').textContent = G.algo==='ab' ? G.analysis.prunes.toLocaleString() : 'n/a';
+  $('mVal').textContent = fmtV(G.analysis.rootVal);
+  const full = rd>=G.board.filter(x=>!x).length;
+  $('treeHint').textContent = full
+    ? `full subtree drawn (${G.nodes.size} nodes shown / ${G.analysis.visits} evaluated)`
+    : `drawn to depth ${rd} of ${G.board.filter(x=>!x).length} (${G.nodes.size} nodes shown / ${G.analysis.visits} evaluated) — play a few moves or press “Expand full subtree”`;
+  pushHist();
+  if(animate===true){ G.playing=true; tick(); }
+  else if(animate==='manual'){ renderTree(G.maxOrder); setPanel(null); }
+  else{ G.evIdx = G.analysis.ev.length-1; renderTree(-1); setPanel(G.analysis.ev[G.analysis.ev.length-1]); }
+  const _w=$('treeWrap'); _w.scrollLeft = Math.max(0,(treeCv.width - _w.clientWidth)/2);
+}
+
+function pushHist(){
+  const tag = `${G.algo==='ab'?'αβ':'mm'}/${G.ordering}: ${G.analysis.visits.toLocaleString()} evaluated`;
+  G.histLines.unshift(tag); G.histLines=G.histLines.slice(0,4);
+  $('mHist').innerHTML = 'recent: ' + G.histLines.join(' · ');
+}
+
+function speedDelay(){ const v=+$('speed').value; return Math.max(6, 420 - v*4.1); }
+
+function stepOnce(){
+  if(!G.analysis) return false;
+  if(G.evIdx >= G.analysis.ev.length-1) return false;
+  G.evIdx++;
+  const e = G.analysis.ev[G.evIdx];
+  if(e.t==='visit'){ G.curId=e.id; const n=G.nodes.get(e.id); if(n) G.maxOrder=Math.max(G.maxOrder,n.order); }
+  renderTree(G.maxOrder);
+  setPanel(e);
+  return true;
+}
+// faster playback: advance k events per tick at high speed
+function tick(){
+  if(!G.playing) return;
+  const v=+$('speed').value;
+  const k = v>85 ? 12 : v>65 ? 4 : 1;
+  let more=true;
+  for(let i=0;i<k && more;i++) more = stepOnce();
+  if(more){ G.timer=setTimeout(tick, speedDelay()); }
+  else{ G.playing=false; onAnalysisDone(); }
+}
+function onAnalysisDone(){
+  renderTree(-1);
+  setPanel(G.analysis.ev[G.analysis.ev.length-1]);
+  if(G.pendingMove){ G.pendingMove=false; applyMove(G.analysis.rootBest); }
+}
+
+/* ---------- game flow ---------- */
+function statusText(){
+  const w=winnerOf(G.board);
+  if(w==='draw') return 'Game over — draw.';
+  if(w) return `Game over — ${w} wins.`;
+  const p=toMove(G.board);
+  if(G.mode==='play') return p===G.side ? `Your move (${p}).` : `AI is thinking (${p})…`;
+  return `${p} to move.`;
+}
+function predText(){
+  const w=winnerOf(G.board);
+  if(w) return '';
+  if(G.kr && G.mode==='play') return 'Best play from here: ? — you cannot see the whole board';
+  const v=exactValue(G.board.slice());
+  return 'Best play from here: ' + (v>0?'X wins':(v<0?'O wins':'draw'));
+}
+function refresh(){
+  drawBoard();
+  $('statusLine').textContent = statusText();
+  $('predLine').textContent = predText();
+}
+
+function applyMove(cell){
+  if(cell==null || cell<0 || G.board[cell]) return;
+  G.board[cell] = toMove(G.board);
+  refresh(); syncHash();
+  const w=winnerOf(G.board);
+  if(w){ G.watchRunning=false; return; }
+  scheduleNext();
+}
+
+function optMove(board){
+  const p=toMove(board); const legal=[];
+  for(let i=0;i<9;i++) if(!board[i]) legal.push(i);
+  let bv=(p==='X')?-2:2, bm=legal[0];
+  for(const i of legal){ const c=board.slice(); c[i]=p; const v=exactValue(c);
+    if((p==='X'&&v>bv)||(p==='O'&&v<bv)){ bv=v; bm=i; } }
+  return bm;
+}
+function oppPick(){
+  const legal=[]; for(let i=0;i<9;i++) if(!G.board[i]) legal.push(i);
+  if(G.opp!=='optimal'){
+    if(!G.oppRng) G.oppRng = mulberry32((G.seed|0)+77);
+    const slip = G.opp==='random' || (G.opp==='eps' && G.oppRng() < 0.3);
+    if(slip) return {cell: legal[Math.floor(G.oppRng()*legal.length)], slipped:true};
+  }
+  return {cell: optMove(G.board), slipped:false};
+}
+function scheduleNext(){
+  const p = toMove(G.board);
+  if(G.mode==='play'){
+    if(p !== G.side){ // AI turn
+      if(G.kr || G.opp!=='optimal'){
+        // hidden or stochastic opponent: no public analysis (it would leak / mislead)
+        const pick = oppPick();
+        if(G.kr) $('treeHint').textContent = 'analysis hidden — Kriegspiel: the tree would reveal the board';
+        G.aiTimer = setTimeout(()=>{ if(pick.slipped) toast('Opponent slipped — that was a random move, not minimax.'); applyMove(pick.cell); }, 240);
+        return;
+      }
+      if(G.showPlay){ G.pendingMove=true; startAnalysis(true); }
+      else{
+        const a = showAnalysisNow();
+        G.aiTimer = setTimeout(()=>applyMove(a.rootBest), 220);
+      }
+    }
+  }else if(G.mode==='watch' && G.watchRunning){
+    G.pendingMove=true; startAnalysis(true);
+  }
+}
+function showAnalysisNow(){
+  const a = analyze(G.board, {ab:G.algo==='ab', ordering:G.ordering, seed:G.seed, record:true, recDepth:recDepthFor(G.board)});
+  G.analysis=a; G.nodes=buildTree(a.ev); G.evIdx=a.ev.length-1; G.maxOrder=-1;
+  $('mEval').textContent=a.visits.toLocaleString(); $('mLeaf').textContent=a.leaves.toLocaleString();
+  $('mPrune').textContent=G.algo==='ab'?a.prunes.toLocaleString():'n/a'; $('mVal').textContent=fmtV(a.rootVal);
+  pushHist(); renderTree(-1); setPanel(a.ev[a.ev.length-1]);
+  return a;
+}
+
+
+/* ---------- controls wiring ---------- */
+function chip(groupId, onPick){
+  const g=$(groupId);
+  g.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{ g.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); onPick(b.dataset.v); };
+  });
+}
+function setChip(groupId, v){
+  const g=$(groupId);
+  g.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+}
+chip('modeChips', v=>{ G.mode=v; $('sideWrap').style.display = v==='play'?'':'none'; $('krWrap').style.display = v==='play'?'':'none'; $('aiHelpRow').style.display = v==='play'?'':'none'; updateEnv(); stopAll(); resetGame(false); });
+chip('sideChips', v=>{ G.side=v; stopAll(); resetGame(false); });
+chip('algoChips', v=>{ G.algo=v; syncHash(); });
+chip('ordChips', v=>{ G.ordering=v; updateSeedVis(); syncHash(); });
+chip('oppChips', v=>{ G.opp=v; G.oppRng=null; updateSeedVis(); updateEnv(); syncHash(); });
+$('chkKr').onchange=()=>{ G.kr=$('chkKr').checked; updateEnv(); stopAll(); resetGame(false); };
+function updateSeedVis(){ $('seedIn').style.display = (G.ordering==='random' || G.opp!=='optimal') ? '' : 'none'; }
+function updateEnv(){
+  const po = G.kr && G.mode==='play';
+  $('envObs').textContent = po ? 'Partially (Kriegspiel)' : 'Fully';
+  $('envObs').style.color = po ? 'var(--magenta)' : '';
+  $('envDet').textContent = G.opp==='optimal' ? 'Deterministic' : (G.opp==='eps' ? 'Stochastic (opponent slips, \u03b5=0.3)' : 'Stochastic (random opponent)');
+  $('envDet').style.color = G.opp==='optimal' ? '' : 'var(--magenta)';
+}
+$('seedIn').onchange=()=>{ G.seed=+$('seedIn').value|0; G.oppRng=null; syncHash(); };
+$('chkShow').onchange=()=>{ G.showPlay=$('chkShow').checked; };
+$('btnExpand').onclick=()=>{ G.expandAll=!G.expandAll; $('btnExpand').textContent=G.expandAll?'Limit tree depth':'Expand full subtree';
+  if(G.analysis && !G.playing){ startAnalysis(false); } };
+
+function stopAll(){ G.playing=false; G.watchRunning=false; G.pendingMove=false; G.takeover=false;
+  if(G.timer)clearTimeout(G.timer); if(G.aiTimer)clearTimeout(G.aiTimer); }
+function resetGame(keepHash){
+  stopAll();
+  G.board=Array(9).fill(null); G.analysis=null; G.nodes=null; G.evIdx=-1; G.curId=null; G.moveLog=[]; G.maxOrder=-1;
+  G.revealed=new Set(); G.oppRng=null;
+  treeCx.clearRect(0,0,treeCv.width,treeCv.height); setPanel(null);
+  $('treeHint').textContent=''; $('pruneMsg').textContent='';
+  refresh(); if(!keepHash) syncHash();
+  if(G.mode==='play' && G.side==='O') scheduleNext(); // AI (X) opens
+}
+$('btnReset').onclick=()=>resetGame(false);
+$('btnPause').onclick=()=>{ G.playing=false; G.watchRunning=false; if(G.timer)clearTimeout(G.timer); };
+$('btnStep').onclick=()=>{
+  G.playing=false; if(G.timer)clearTimeout(G.timer);
+  if(!G.analysis){ startAnalysis('manual'); }
+  if(!stepOnce() && G.mode==='watch' && !winnerOf(G.board)){
+    applyMove(G.analysis.rootBest);
+    if(!winnerOf(G.board)) startAnalysis('manual');
+  }
+};
+$('btnGo').onclick=()=>{
+  if(winnerOf(G.board)){ resetGame(false); }
+  if(G.mode==='watch'){ G.watchRunning=true; G.pendingMove=true; startAnalysis(true); }
+  else{
+    if(G.kr){ toast('Analysis is hidden in Kriegspiel — it would reveal the board.'); return; }
+    if(G.playing){ return; }
+    if(G.analysis && G.evIdx < G.analysis.ev.length-1){ G.playing=true; tick(); }
+    else startAnalysis(true); // analyze current position for inspection (does not move)
+  }
+};
+
+boardCv.onclick=(e)=>{
+  if(G.mode!=='play') return;
+  if(toMove(G.board)!==G.side) return;
+  if(winnerOf(G.board)) return;
+  const r=boardCv.getBoundingClientRect();
+  const x=Math.floor((e.clientX-r.left)/(r.width/3)), y=Math.floor((e.clientY-r.top)/(r.height/3));
+  const cell=y*3+x;
+  if(G.board[cell]){
+    if(G.kr && G.board[cell]!==G.side && !G.revealed.has(cell)){
+      G.revealed.add(cell); drawBoard();
+      $('statusLine').textContent = 'Referee: illegal — that square is occupied. Still your move.';
+    }
+    return;
+  }
+  stopAll();
+  applyMove(cell);
+};
+
+/* ---------- share link / hash ---------- */
+function syncHash(){
+  const h = `m=${G.mode}&sd=${G.side}&al=${G.algo}&or=${G.ordering}&se=${G.seed}&op=${G.opp}&kr=${G.kr?1:0}&mv=${G.moveLog.join('')}`;
+  history.replaceState(null,'','#'+h);
+}
+G.moveLog=[];
+const _applyMove = applyMove;
+applyMove = function(cell){ // wrap to log moves
+  if(cell!=null && cell>=0 && !G.board[cell] && !winnerOf(G.board)) G.moveLog.push(cell);
+  _applyMove(cell);
+};
+function applyHash(){
+  if(!location.hash) return;
+  const q=new URLSearchParams(location.hash.slice(1));
+  if(q.get('m')){ G.mode=q.get('m')==='watch'?'watch':'play'; setChip('modeChips',G.mode); $('sideWrap').style.display=G.mode==='play'?'':'none'; }
+  if(q.get('sd')){ G.side=q.get('sd')==='O'?'O':'X'; setChip('sideChips',G.side); }
+  if(q.get('al')){ G.algo=q.get('al')==='mm'?'mm':'ab'; setChip('algoChips',G.algo); }
+  if(q.get('or')){ const o=q.get('or'); if(['best','worst','random'].includes(o)){ G.ordering=o; setChip('ordChips',o); } }
+  if(q.get('se')){ G.seed=+q.get('se')|0; $('seedIn').value=G.seed; }
+  if(q.get('op')){ const o=q.get('op'); if(['optimal','eps','random'].includes(o)){ G.opp=o; setChip('oppChips',o); } }
+  if(q.get('kr')==='1'){ G.kr=true; $('chkKr').checked=true; }
+  const mv=q.get('mv')||'';
+  for(const ch of mv){
+    const cell=+ch;
+    if(cell>=0 && cell<9 && !G.board[cell] && !winnerOf(G.board)){ G.moveLog.push(cell); G.board[cell]=toMove(G.board); }
+  }
+}
+$('btnShare').onclick=()=>{
+  syncHash();
+  const url=location.href;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(()=>toast('Link copied — same position, same settings, deterministic.'),()=>toast(url));
+  } else toast(url);
+};
+$('btnPng').onclick=()=>{
+  const a=document.createElement('a');
+  a.download=`game-arena-tree-${G.algo}-${G.ordering}.png`;
+  a.href=treeCv.toDataURL('image/png'); a.click();
+};
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.opacity=1; setTimeout(()=>t.style.opacity=0, 2600); }
+
+/* ---------- game space explorer: plain enumeration to depth d ---------- */
+function enumerateSpace(rootBoard, depth){
+  const nodes = new Map();
+  function walk(b, path){
+    const id = path.length ? path.join('') : 'r';
+    const parent = path.length ? (path.length===1 ? 'r' : path.slice(0,-1).join('')) : null;
+    const w = winnerOf(b);
+    const n = {id, parent, depth:path.length, key:keyOf(b), player:toMove(b), kids:[],
+               val: w!==null ? utility(w) : null, leaf: w!==null, bestMove:-1, cut:[], order:nodes.size};
+    nodes.set(id, n);
+    if(parent!==null) nodes.get(parent).kids.push(id);
+    if(w!==null || path.length>=depth) return;
+    const p = toMove(b);
+    for(let i=0;i<9;i++) if(!b[i]){ b[i]=p; walk(b, path.concat(i)); b[i]=null; }
+  }
+  walk(rootBoard.slice(), []);
+  return nodes;
+}
+let _lcCache = null;
+function levelCounts(rootBoard){
+  const key = keyOf(rootBoard);
+  if(_lcCache && _lcCache.key===key) return _lcCache.counts;
+  const counts = [];
+  (function walk(b, d){
+    counts[d] = (counts[d]||0) + 1;
+    if(winnerOf(b)!==null) return;
+    const p = toMove(b);
+    for(let i=0;i<9;i++) if(!b[i]){ b[i]=p; walk(b, d+1); b[i]=null; }
+  })(rootBoard.slice(), 0);
+  _lcCache = {key, counts};
+  return counts;
+}
+G.spaceDepth = 2;
+chip('depthChips', v=>{ G.spaceDepth = +v; });
+$('btnSpace').onclick = ()=>{
+  stopAll();
+  const counts = levelCounts(G.board);
+  const total = counts.reduce((a,c)=>a+c, 0);
+  G.nodes = enumerateSpace(G.board, G.spaceDepth);
+  G.analysis = null; G.curId = null; G.evIdx = -1;
+  renderTree(-1); setPanel(null); $('pruneMsg').textContent='';
+  const wrap=$('treeWrap'); wrap.scrollLeft = Math.max(0,(treeCv.width - wrap.clientWidth)/2);
+  const shown = G.nodes.size;
+  const parts = counts.map((c,i)=> (i<=G.spaceDepth ? `<b>d${i}: ${c.toLocaleString()}</b>` : `d${i}: ${c.toLocaleString()}`));
+  $('treeHint').innerHTML =
+    `game space from this position — drawn to depth ${G.spaceDepth} (${shown.toLocaleString()} nodes, bold levels). ` +
+    `Nodes per level: ${parts.join(' · ')} · <b>total ${total.toLocaleString()}</b>. ` +
+    `Enumerate all of that — or search it cleverly? (Run Minimax vs Alpha-Beta and compare “nodes evaluated”.)`;
+};
+
+/* ---------- AI assist: hint move + full takeover ---------- */
+$('btnHint').onclick = ()=>{
+  if(G.mode!=='play' || winnerOf(G.board)) return;
+  if(G.kr){ toast('Not available in Kriegspiel — the AI would peek at the hidden board.'); return; }
+  if(toMove(G.board)!==G.side){ toast('Not your turn — the opponent is about to move.'); return; }
+  stopAll();
+  const a = showAnalysisNow();
+  toast('AI plays cell ' + a.rootBest + ' for you — follow the green edge from the root.');
+  G.aiTimer = setTimeout(()=>applyMove(a.rootBest), 600);
+};
+$('btnTake').onclick = async ()=>{
+  if(G.mode!=='play' || winnerOf(G.board) || G.takeover) return;
+  if(G.kr){ toast('Not available in Kriegspiel — the AI would peek at the hidden board.'); return; }
+  stopAll();
+  G.takeover = true;
+  $('statusLine').textContent = 'AI has taken over your side — optimal play from here.';
+  while(!winnerOf(G.board) && G.takeover){
+    const pl = toMove(G.board);
+    let cell;
+    if(pl===G.side){ const a = showAnalysisNow(); cell = a.rootBest; }
+    else{ const pick = oppPick(); cell = pick.cell; if(pick.slipped) toast('Opponent slipped — random move.'); }
+    G.board[cell]=pl; G.moveLog.push(cell);
+    drawBoard(); $('predLine').textContent = predText(); syncHash();
+    if(!winnerOf(G.board)) $('statusLine').textContent = 'AI has taken over your side — optimal play from here.';
+    else $('statusLine').textContent = statusText();
+    await new Promise(r=>setTimeout(r, 480));
+  }
+  G.takeover = false;
+};
+
+/* ---------- my-code: student agent API ---------- */
+function showCodeErr(m){ const e=$('codeErr'); e.textContent=m; e.style.display=''; }
+function compileAgent(){
+  $('codeErr').style.display='none';
+  try{
+    const factory = new Function('"use strict";\n' + $('myCode').value +
+      '\n;if(typeof agent!=="function") throw new Error("define a function named agent(percept)");\nreturn agent;');
+    return factory();
+  }catch(err){ showCodeErr('Compile error: ' + err.message); return null; }
+}
+function agentStep(fn, board, you){
+  const legal=[]; for(let i=0;i<9;i++) if(!board[i]) legal.push(i);
+  let mv;
+  try{ mv = fn({board: board.slice(), you, legalMoves: legal.slice()}); }
+  catch(err){ throw new Error('Your agent crashed: ' + err.message); }
+  if(!Number.isInteger(mv) || mv<0 || mv>8 || board[mv])
+    throw new Error('Invalid action: agent returned ' + JSON.stringify(mv) + ' — must be one of [' + legal.join(', ') + '].');
+  return mv;
+}
+let myRunning=false;
+$('btnMyPlay').onclick = async ()=>{
+  if(myRunning) return;
+  const fn = compileAgent(); if(!fn) return;
+  myRunning=true; $('myOut').textContent='';
+  stopAll(); G.board=Array(9).fill(null); G.moveLog=[]; G.revealed=new Set();
+  refresh();
+  try{
+    while(!winnerOf(G.board)){
+      const pl = toMove(G.board);
+      const cell = (pl===G.side) ? agentStep(fn, G.board, G.side) : optMove(G.board);
+      G.board[cell]=pl; G.moveLog.push(cell);
+      refresh();
+      await new Promise(r=>setTimeout(r, 260));
+    }
+    const w = winnerOf(G.board);
+    $('myOut').textContent =
+      w==='draw' ? 'Draw vs the optimal opponent — the best possible result. Rubric part 2: PASS.' :
+      (w===G.side ? 'You beat the optimal opponent?! That should be impossible — please save this link and report it.' :
+                    'Your agent lost to the optimal opponent. A perfect agent never loses — it always forces a draw.');
+  }catch(err){ showCodeErr(err.message); refresh(); }
+  myRunning=false;
+};
+$('btnMyTest').onclick = ()=>{
+  if(myRunning) return;
+  const fn = compileAgent(); if(!fn) return;
+  $('myOut').textContent='testing…';
+  let W=0,D=0,L=0;
+  try{
+    for(let g=1; g<=20; g++){
+      const rng = mulberry32(g*911+3);
+      const b = Array(9).fill(null);
+      while(!winnerOf(b)){
+        const pl = toMove(b);
+        let cell;
+        if(pl===G.side){ cell = agentStep(fn, b, G.side); }
+        else{
+          const legal=[]; for(let i=0;i<9;i++) if(!b[i]) legal.push(i);
+          cell = legal[Math.floor(rng()*legal.length)];
+        }
+        b[cell]=pl;
+      }
+      const w=winnerOf(b);
+      if(w==='draw') D++; else if(w===G.side) W++; else L++;
+    }
+    const verdict = (L===0) ? 'Rubric part 1: PASS (never lost).' : 'Rubric part 1: FAIL — a perfect agent never loses.';
+    $('myOut').innerHTML = `vs random ×20 (as ${G.side}): <b>${W} W · ${D} D · ${L} L</b>. ${verdict}`;
+  }catch(err){ showCodeErr(err.message); $('myOut').textContent=''; }
+};
+
+/* ---------- test hooks (used by offline verification harness) ---------- */
+window.__GA = {
+  spaceCounts: s => levelCounts(boardFrom(s)),
+  spaceNodes: (s,d) => enumerateSpace(boardFrom(s), d).size,
+  exactValue: s => exactValue(boardFrom(s)),
+  analyzeVal: (s,opts) => { const r=analyze(boardFrom(s), Object.assign({record:false},opts)); return {rootVal:r.rootVal, rootBest:r.rootBest, visits:r.visits, leaves:r.leaves, prunes:r.prunes}; },
+  winner: s => winnerOf(boardFrom(s)),
+  toMove: s => toMove(boardFrom(s)),
+};
+
+/* ---------- boot ---------- */
+applyHash();
+$('sideWrap').style.display = G.mode==='play'?'':'none';
+$('krWrap').style.display = G.mode==='play'?'':'none';
+$('aiHelpRow').style.display = G.mode==='play'?'':'none';
+updateSeedVis(); updateEnv();
+refresh();
+if(G.mode==='play' && !winnerOf(G.board) && toMove(G.board)!==G.side) scheduleNext();
+</script>
+</body>
+</html>

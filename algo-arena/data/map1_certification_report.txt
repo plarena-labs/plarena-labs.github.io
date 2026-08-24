@@ -1,0 +1,19 @@
+[PASS] R0 connectivity: all named cells reachable from Depot — unreachable=[]
+[PASS] R1 greedy 'step toward goal' fails Depot->P1 — result=stuck at (5, 0) after 5 steps
+[PASS] R1 but BFS reaches P1 — BFS path len=15
+[PASS] R2 BFS route to P2 crosses mud
+[PASS] R2 Dijkstra cost < BFS-path terrain cost — dij=23 vs bfs-path=25 (hops 21 vs 21)
+[PASS] Scoreboard: A* optimal (== Dijkstra) — A*=23
+[PASS] Scoreboard: A* expands substantially fewer than Dijkstra — BFS=105, Dijkstra=104, A*=61
+[PASS] R3 conveyor layer: closed-set Dijkstra wrong vs Bellman-Ford at P2 — dijkstra=23 bellman-ford=21
+[PASS] R4 overpass layer: Manhattan inadmissible somewhere — 14 violating nodes, e.g. [((1, 0), 14, 7)]
+[PASS] R4 A*(closed set) suboptimal with overpass ON, start (0,4)->P2 — A*=19 vs true=12
+[PASS] R5 dock graph chromatic number = 3 (odd cycle C5) — chi=3
+[PASS] R8 unique closest pair among pins — min=4.00 next=4.12
+[PASS] R8 TSP: NN tour strictly worse than OPT (720 tours enumerated) — NN=53 OPT=51
+[PASS] R10 max edge-disjoint Depot->C3 paths == 2 (visible bottleneck) — flow=2
+[INFO] grid 12x12, open cells=108; close-up window suggestion: rows 0-5, cols 0-7 (contains Depot, trap, P1)
+[INFO] Scoreboard(Depot->P2): BFS exp=105, Dijkstra exp=104, A* exp=61; costs bfs-path=25, opt=23
+[INFO] TSP: OPT=51 order=['P3', 'P1', 'P5', 'P6', 'P2', 'P4'], NN=53
+
+ALL CHECKS: PASS

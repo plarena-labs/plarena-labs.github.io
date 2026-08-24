@@ -1,0 +1,55 @@
+# PUBLIC_MANIFEST.txt - the allowlist for this repository.
+#
+# Every path here is approved for publication on a PUBLIC repository and a
+# PUBLIC website. Anything git tracks that is missing from this list stops the
+# push: new files are private by default and go public only by an explicit
+# line added here.
+#
+# This list is generated and verified by maintainer tooling kept outside
+# this repository. Do not hand-edit.
+
+.github/workflows/build-reproducibility.yml
+.gitignore
+.nojekyll
+BRAND.md
+CHANGELOG.md
+CITATION.cff
+LICENSE
+PUBLIC_MANIFEST.txt
+README.md
+algo-arena/CHANGELOG.md
+algo-arena/README.md
+algo-arena/data/README.md
+algo-arena/data/map1.json
+algo-arena/data/map1_certification_report.txt
+algo-arena/data/pinned_js.json
+algo-arena/data/pinned_py.json
+algo-arena/data/verify_map1.py
+algo-arena/fall2026/index.html
+algo-arena/index.html
+algo-arena/src/algo_arena.src.html
+algo-arena/src/algo_core.js
+algo-arena/src/algo_core.py
+algo-arena/src/twin_check.js
+docs/ARCHITECTURE.md
+game-arena/CHANGELOG.md
+game-arena/README.md
+game-arena/fall2026/index.html
+game-arena/index.html
+game-arena/src/game_arena.src.html
+index.html
+lib/build.py
+lib/rough.js
+ml-arena/CHANGELOG.md
+ml-arena/README.md
+ml-arena/fall2026/index.html
+ml-arena/index.html
+ml-arena/src/ml_arena.src.html
+ml-arena/src/ml_core.js
+ml-arena/src/ml_core.py
+ml-arena/src/ml_grades.js
+search-arena/CHANGELOG.md
+search-arena/README.md
+search-arena/fall2026/index.html
+search-arena/index.html
+search-arena/src/search_arena.src.html

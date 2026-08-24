@@ -1,0 +1,27 @@
+name: build reproducibility
+
+# What this can and cannot do
+# ---------------------------
+# Actions run AFTER a push has landed, so this cannot gate publication — a red X
+# does not unpublish. The publication gate proper is owner tooling and lives
+# outside this repository; it runs as a pre-push hook before anything is sent.
+#
+# What this workflow does do is catch drift: if a committed <arena>/index.html
+# is not what its sources build, that is visible here immediately.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every arena rebuilds byte-identically from its sources
+        run: |
+          python3 lib/build.py
+          git diff --exit-code -- '*/index.html'

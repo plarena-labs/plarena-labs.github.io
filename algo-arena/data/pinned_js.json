@@ -1,0 +1,123 @@
+{
+ "grid_checksum": 4217563206,
+ "m0_binary_probes": 3,
+ "m0_scan_probes": 14,
+ "m0_sort_breakeven": 11,
+ "m0_sort_comps": 63,
+ "m0_sort_shifts": 50,
+ "m1_bfs_expanded": 58,
+ "m1_bfs_hops": 15,
+ "m1_dfs_expanded": 29,
+ "m1_dfs_hops": 27,
+ "m1_greedy_result": "stuck",
+ "m1_greedy_steps": 5,
+ "m1_greedy_stuck_at": [
+  5,
+  0
+ ],
+ "m1_legal_walks_len15": 150627,
+ "m1_legal_walks_len8": 475,
+ "m1_needles_p1": 1,
+ "m2_astar_cost": 23,
+ "m2_astar_expanded": 61,
+ "m2_bfs_expanded": 105,
+ "m2_bfs_hops": 21,
+ "m2_bfs_path_cost": 25,
+ "m2_certify_agree": 1000,
+ "m2_certify_checksum": 14905,
+ "m2_conveyor_bf_cost": 21,
+ "m2_conveyor_dijkstra_cost": 23,
+ "m2_dijkstra_cost": 23,
+ "m2_dijkstra_expanded": 104,
+ "m2_dijkstra_hops": 21,
+ "m2_needles_p2": 12,
+ "m2_overpass_astar_cost": 19,
+ "m2_overpass_inadmissible_nodes": 14,
+ "m2_overpass_true_cost": 12,
+ "m3_k2_fc_nodes": 8,
+ "m3_k2_fc_ok": false,
+ "m3_k2_plain_nodes": 18,
+ "m3_k2_plain_ok": false,
+ "m3_k3_fc_nodes": 5,
+ "m3_k3_fc_ok": true,
+ "m3_k3_plain_nodes": 9,
+ "m3_k3_plain_ok": true,
+ "m3_k3_solution": [
+  0,
+  1,
+  0,
+  1,
+  2
+ ],
+ "m4_cable": {
+  "C1-C2": 10,
+  "C1-C3": 12,
+  "C2-C3": 4,
+  "Depot-C1": 10,
+  "Depot-C2": 18,
+  "Depot-C3": 22
+ },
+ "m4_eft": [
+  "A",
+  "C",
+  "E",
+  "G"
+ ],
+ "m4_esf": [
+  "F",
+  "G"
+ ],
+ "m4_knap_greedy": 14,
+ "m4_knap_greedy_take": [
+  "party tray"
+ ],
+ "m4_knap_opt": 16,
+ "m4_mst_brute_total": 24,
+ "m4_mst_edges": [
+  "Depot-C1",
+  "C1-C2",
+  "C2-C3"
+ ],
+ "m4_mst_total": 24,
+ "m4_opt_count": 4,
+ "m5_n128_agree": true,
+ "m5_n128_dnc_ops": 673,
+ "m5_n128_naive_ops": 8128,
+ "m5_n32_agree": true,
+ "m5_n32_dnc_ops": 161,
+ "m5_n32_naive_ops": 496,
+ "m5_pins_dnc_d2": 16,
+ "m5_pins_min_d2": 16,
+ "m5_pins_naive_ops": 15,
+ "m6_griddp_cost": 22,
+ "m6_griddp_ways": 53,
+ "m6_knap_table_final": 16,
+ "m6_stairs_naive_nodes": 177,
+ "m6_stairs_ways": 89,
+ "m7_cut_size": 2,
+ "m7_maxflow": 2,
+ "m7_path_lens": [
+  22,
+  28
+ ],
+ "m7_rounds": 3,
+ "m8_nn": 53,
+ "m8_nn_order": [
+  "P3",
+  "P5",
+  "P6",
+  "P1",
+  "P4",
+  "P2"
+ ],
+ "m8_opt": 51,
+ "m8_opt_order": [
+  "P3",
+  "P1",
+  "P5",
+  "P6",
+  "P2",
+  "P4"
+ ],
+ "m8_tours": 720
+}

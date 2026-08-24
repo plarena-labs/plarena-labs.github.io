@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use Plarena in teaching or research, please cite it as below."
+title: "Plarena: playable arenas for teaching hard ideas in computer science"
+authors:
+  - family-names: "Su"
+    given-names: "Xian"
+    affiliation: "Florida International University"
+type: software
+version: "0.1.3"
+date-released: "2026-08-24"
+url: "https://plarena-labs.github.io/"
+repository-code: "https://github.com/plarena-labs/plarena-labs.github.io"
+license: MIT
+keywords:
+  - computing education
+  - algorithms education
+  - artificial intelligence education
+  - machine learning education
+  - search algorithms
+  - "A*"
+  - adversarial search
+  - explorable explanation
+  - visualization
+abstract: >-
+  Plarena is a suite of zero-install, single-file browser apps for teaching
+  computer science through play: students do not watch an algorithm, they run
+  it, break it, race it, and write their own agents against it. Each arena is
+  one self-contained HTML file that works offline from disk and makes no
+  network requests. Search Arena covers uninformed and informed search on
+  procedurally generated grid worlds, with a probe-level search tree, a live
+  frontier data-structure panel, and fog-of-war observability. Algo Arena runs
+  nine rooms on a single certified campus map, tracing the arc from brute force
+  through greedy, divide-and-conquer, dynamic programming and reduction to the
+  intractability wall. Game Arena covers adversarial search on tic-tac-toe,
+  where every leaf is a true terminal utility, so minimax and alpha-beta values
+  are exact. ML Arena is a small recommender in which the student's own clicks
+  are the training set, and linear regression, logistic regression and a small
+  neural network each win where the others fail. Teaching numbers in Algo Arena and
+  ML Arena are reproduced by an independent Python twin of the JavaScript core;
+  Search and Game Arena are reproduced by the app's own deterministic engine.
+  Deterministic seeds with URL share-links make each instance exactly
+  reproducible, so a link can be handed out as an assignment. Source code is
+  MIT; the course content and datasets are CC BY 4.0; the Plarena name and
+  mascot are reserved (see BRAND.md).
